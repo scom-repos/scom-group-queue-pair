@@ -1,6 +1,10 @@
 import { ControlElement, customElements, Module, Panel, Styles, VStack } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
+import { IGroupQueuePair } from './interface';
+import formSchema from './formSchema';
+import { State } from './store/index';
+import configData from './data.json';
 const Theme = Styles.Theme.ThemeVars;
 
 interface ScomGroupQueuePairElement extends ControlElement {
@@ -20,15 +24,96 @@ export default class ScomGroupQueuePair extends Module {
 	private loadingElm: Panel;
 	private emptyStack: VStack;
 	private infoStack: VStack;
+	private state: State;
+    private _data: IGroupQueuePair = {
+        chainId: 0,
+        tokenFrom: '',
+        tokenTo: ''
+    };
+    tag: any = {};
+
+	private get chainId() {
+		return this.state.getChainId();
+	}
+
+	private get rpcWallet() {
+		return this.state.getRpcWallet();
+	}
 
     async init() {
         this.isReadyCallbackQueued = true;
         super.init();
+		this.state = new State(configData);
         this.infoStack.visible = false;
         this.emptyStack.visible = true;
         this.loadingElm.visible = false;
         this.isReadyCallbackQueued = false;
 		this.executeReadyCallback();
+    }
+    
+    private _getActions(category?: string) {
+        const actions: any[] = [];
+        if (category && category !== 'offers') {
+            actions.push({
+                name: 'Edit',
+                icon: 'edit',
+                command: (builder: any, userInputData: any) => {
+                },
+                userInputDataSchema: formSchema.dataSchema,
+                userInputUISchema: formSchema.uiSchema,
+				customControls: formSchema.customControls(this.rpcWallet?.instanceId)
+            })
+        }
+    }
+
+    getConfigurators() {
+        return [
+            {
+                name: 'Builder Configurator',
+                target: 'Builders',
+                getActions: this._getActions.bind(this),
+                getData: this.getData.bind(this),
+                setData: async (data: any) => {
+                    await this.setData(data);
+                },
+                getTag: this.getTag.bind(this),
+                setTag: this.setTag.bind(this)
+            }
+        ]
+    }
+
+    private getData() {
+        return this._data;
+    }
+
+    private async setData(data: IGroupQueuePair) {
+        this._data = data;
+    }
+
+    async getTag() {
+        return this.tag;
+    }
+
+	private updateTag(type: 'light' | 'dark', value: any) {
+		this.tag[type] = this.tag[type] ?? {};
+		for (let prop in value) {
+			if (value.hasOwnProperty(prop))
+				this.tag[type][prop] = value[prop];
+		}
+	}
+
+    private setTag(value: any) {
+        const newValue = value || {};
+		for (let prop in newValue) {
+			if (newValue.hasOwnProperty(prop)) {
+				if (prop === 'light' || prop === 'dark')
+					this.updateTag(prop, newValue[prop]);
+				else
+					this.tag[prop] = newValue[prop];
+			}
+		}
+		if (this.dappContainer)
+			this.dappContainer.setTag(this.tag);
     }
 
     render() {
