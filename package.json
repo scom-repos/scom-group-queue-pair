@@ -23,7 +23,7 @@
       "@scom/scom-wallet-modal": "^0.1.0",
       "@scom/scom-tx-status-modal": "^0.1.0",
       "@scom/scom-network-picker": "^0.1.3",
-      "@scom/scom-token-input": "^0.1.5"
+      "@scom/scom-token-input": "https://github.com/scom-repos/scom-token-input"
     },
     "devDependencies": {
       "@ijstech/cli": "^0.1.28",
