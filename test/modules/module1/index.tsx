@@ -51,7 +51,12 @@ export default class Module1 extends Module {
         return (
             <i-panel>
                 <i-hstack id="mainStack" margin={{ top: '1rem', left: '1rem' }} gap="2rem">
-                    <i-scom-group-queue-pair></i-scom-group-queue-pair>
+                    <i-scom-group-queue-pair
+                        chainId={43113}
+                        tokenFrom="0x78d9d80e67bc80a11efbf84b7c8a65da51a8ef3c"
+                        tokenTo="0xb9c31ea1d475c25e58a1be1a46221db55e5a7c6e"
+                        defaultChainId={43113}
+                    ></i-scom-group-queue-pair>
                 </i-hstack>
             </i-panel>
         )

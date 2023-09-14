@@ -3,11 +3,19 @@ import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
 import { IGroupQueuePair } from './interface';
 import formSchema from './formSchema';
-import { State } from './store/index';
+import { getTokenIcon, getTokenSymbol, State } from './store/index';
 import configData from './data.json';
+import { groupQueuePairStyle } from './index.css';
+import { tokenStore } from '@scom/scom-token-list';
 const Theme = Styles.Theme.ThemeVars;
 
 interface ScomGroupQueuePairElement extends ControlElement {
+    lazyLoad?: boolean;
+    chainId?: number;
+    tokenFrom?: string;
+    tokenTo?: string;
+    defaultChainId?: number;
+    showHeader?: boolean;
 }
 
 declare global {
@@ -21,10 +29,10 @@ declare global {
 @customElements('i-scom-group-queue-pair')
 export default class ScomGroupQueuePair extends Module {
     private dappContainer: ScomDappContainer;
-	private loadingElm: Panel;
-	private emptyStack: VStack;
-	private infoStack: VStack;
-	private state: State;
+    private loadingElm: Panel;
+    private emptyStack: VStack;
+    private infoStack: VStack;
+    private state: State;
     private _data: IGroupQueuePair = {
         chainId: 0,
         tokenFrom: '',
@@ -32,25 +40,60 @@ export default class ScomGroupQueuePair extends Module {
     };
     tag: any = {};
 
-	private get chainId() {
-		return this.state.getChainId();
-	}
+    private get chainId() {
+        return this.state.getChainId();
+    }
 
-	private get rpcWallet() {
-		return this.state.getRpcWallet();
-	}
+    private get rpcWallet() {
+        return this.state.getRpcWallet();
+    }
 
     async init() {
         this.isReadyCallbackQueued = true;
         super.init();
-		this.state = new State(configData);
-        this.infoStack.visible = false;
-        this.emptyStack.visible = true;
+        this.state = new State(configData);
+        const lazyLoad = this.getAttribute('lazyLoad', true, false);
+        if (!lazyLoad) {
+            const chainId = this.getAttribute('chainId', true, 0);
+            const tokenFrom = this.getAttribute('tokenFrom', true, '');
+            const tokenTo = this.getAttribute('tokenTo', true, '');
+            const defaultChainId = this.getAttribute('defaultChainId', true);
+            const showHeader = this.getAttribute('showHeader', true);
+            const data: IGroupQueuePair = {
+                chainId,
+                tokenFrom,
+                tokenTo,
+                defaultChainId,
+                showHeader
+            }
+            await this.setData(data);
+        }
         this.loadingElm.visible = false;
         this.isReadyCallbackQueued = false;
-		this.executeReadyCallback();
+        this.executeReadyCallback();
     }
-    
+
+    private renderPair() {
+        this.infoStack.clearInnerHTML();
+        const { chainId, tokenFrom, tokenTo } = this._data;
+        if (!chainId || !tokenFrom || !tokenTo) {
+            this.infoStack.visible = false;
+            this.emptyStack.visible = true;
+        } else {
+            this.infoStack.appendChild(
+                <i-vstack class={groupQueuePairStyle} horizontalAlignment="center" verticalAlignment="center">
+                    <i-label padding={{ top: 16 }} caption={`${getTokenSymbol(chainId, tokenFrom)} to ${getTokenSymbol(chainId, tokenTo)}`} font={{ bold: true }} />
+                    <i-hstack padding={{ bottom: 16, top: 16, left: 16, right: 16 }} horizontalAlignment="center" verticalAlignment="center">
+                        <i-image width={75} url={getTokenIcon(chainId, tokenFrom)} />
+                        <i-image width={75} class="icon-right" url={getTokenIcon(chainId, tokenTo)} />
+                    </i-hstack>
+                </i-vstack>
+            )
+            this.infoStack.visible = true;
+            this.emptyStack.visible = false;
+        }
+    }
+
     private _getActions(category?: string) {
         const actions: any[] = [];
         if (category && category !== 'offers') {
@@ -61,7 +104,7 @@ export default class ScomGroupQueuePair extends Module {
                 },
                 userInputDataSchema: formSchema.dataSchema,
                 userInputUISchema: formSchema.uiSchema,
-				customControls: formSchema.customControls(this.rpcWallet?.instanceId)
+                customControls: formSchema.customControls(this.rpcWallet?.instanceId)
             })
         }
     }
@@ -88,32 +131,34 @@ export default class ScomGroupQueuePair extends Module {
 
     private async setData(data: IGroupQueuePair) {
         this._data = data;
+        tokenStore.updateTokenMapData(this._data.chainId || this.chainId);
+        this.renderPair();
     }
 
     async getTag() {
         return this.tag;
     }
 
-	private updateTag(type: 'light' | 'dark', value: any) {
-		this.tag[type] = this.tag[type] ?? {};
-		for (let prop in value) {
-			if (value.hasOwnProperty(prop))
-				this.tag[type][prop] = value[prop];
-		}
-	}
+    private updateTag(type: 'light' | 'dark', value: any) {
+        this.tag[type] = this.tag[type] ?? {};
+        for (let prop in value) {
+            if (value.hasOwnProperty(prop))
+                this.tag[type][prop] = value[prop];
+        }
+    }
 
     private setTag(value: any) {
         const newValue = value || {};
-		for (let prop in newValue) {
-			if (newValue.hasOwnProperty(prop)) {
-				if (prop === 'light' || prop === 'dark')
-					this.updateTag(prop, newValue[prop]);
-				else
-					this.tag[prop] = newValue[prop];
-			}
-		}
-		if (this.dappContainer)
-			this.dappContainer.setTag(this.tag);
+        for (let prop in newValue) {
+            if (newValue.hasOwnProperty(prop)) {
+                if (prop === 'light' || prop === 'dark')
+                    this.updateTag(prop, newValue[prop]);
+                else
+                    this.tag[prop] = newValue[prop];
+            }
+        }
+        if (this.dappContainer)
+            this.dappContainer.setTag(this.tag);
     }
 
     render() {

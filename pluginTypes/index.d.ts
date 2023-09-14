@@ -16,6 +16,8 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         chainId: number;
         tokenFrom: string;
         tokenTo: string;
+        defaultChainId?: number;
+        showHeader?: boolean;
     }
 }
 /// <amd-module name="@scom/scom-group-queue-pair/formSchema.ts" />
@@ -95,6 +97,8 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair/store/index.ts" />
 declare module "@scom/scom-group-queue-pair/store/index.ts" {
+    export const getTokenIcon: (chainId: number, address: string) => string;
+    export const getTokenSymbol: (chainId: number, address: string) => string;
     export * from "@scom/scom-group-queue-pair/store/utils.ts";
 }
 /// <amd-module name="@scom/scom-group-queue-pair/data.json.ts" />
@@ -109,10 +113,20 @@ declare module "@scom/scom-group-queue-pair/data.json.ts" {
     };
     export default _default_2;
 }
+/// <amd-module name="@scom/scom-group-queue-pair/index.css.ts" />
+declare module "@scom/scom-group-queue-pair/index.css.ts" {
+    export const groupQueuePairStyle: string;
+}
 /// <amd-module name="@scom/scom-group-queue-pair" />
 declare module "@scom/scom-group-queue-pair" {
     import { ControlElement, Module } from '@ijstech/components';
     interface ScomGroupQueuePairElement extends ControlElement {
+        lazyLoad?: boolean;
+        chainId?: number;
+        tokenFrom?: string;
+        tokenTo?: string;
+        defaultChainId?: number;
+        showHeader?: boolean;
     }
     global {
         namespace JSX {
@@ -132,6 +146,7 @@ declare module "@scom/scom-group-queue-pair" {
         private get chainId();
         private get rpcWallet();
         init(): Promise<void>;
+        private renderPair;
         private _getActions;
         getConfigurators(): {
             name: string;

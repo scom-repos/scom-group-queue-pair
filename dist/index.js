@@ -253,10 +253,30 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
     }
     exports.State = State;
 });
-define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, utils_1) {
+define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, scom_token_list_2, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    ///<amd-module name='@scom/scom-group-queue-pair/store/index.ts'/> 
+    exports.getTokenSymbol = exports.getTokenIcon = void 0;
+    const getToken = (chainId, address) => {
+        const tokenMap = scom_token_list_2.tokenStore.tokenMap;
+        const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_2.ChainNativeTokenByChainId[chainId];
+        return tokenObject;
+    };
+    const getTokenIcon = (chainId, address) => {
+        if (address == null)
+            return '';
+        const tokenObject = getToken(chainId, address);
+        const path = scom_token_list_2.assets.tokenPath(tokenObject, chainId);
+        return path;
+    };
+    exports.getTokenIcon = getTokenIcon;
+    const getTokenSymbol = (chainId, address) => {
+        if (address == null)
+            return '';
+        const tokenObject = getToken(chainId, address);
+        return tokenObject.symbol;
+    };
+    exports.getTokenSymbol = getTokenSymbol;
     __exportStar(utils_1, exports);
 });
 define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], function (require, exports) {
@@ -279,11 +299,24 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
         ],
     };
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts"], function (require, exports, components_3, assets_1, formSchema_1, index_1, data_json_1) {
+define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    exports.groupQueuePairStyle = void 0;
     const Theme = components_3.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_3.Module {
+    exports.groupQueuePairStyle = components_3.Styles.style({
+        $nest: {
+            '.icon-right': {
+                transform: 'translate(-10px, 0)',
+            },
+        }
+    });
+});
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-token-list"], function (require, exports, components_4, assets_1, formSchema_1, index_1, data_json_1, index_css_1, scom_token_list_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_4.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_4.Module {
         constructor() {
             super(...arguments);
             this._data = {
@@ -303,11 +336,42 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.isReadyCallbackQueued = true;
             super.init();
             this.state = new index_1.State(data_json_1.default);
-            this.infoStack.visible = false;
-            this.emptyStack.visible = true;
+            const lazyLoad = this.getAttribute('lazyLoad', true, false);
+            if (!lazyLoad) {
+                const chainId = this.getAttribute('chainId', true, 0);
+                const tokenFrom = this.getAttribute('tokenFrom', true, '');
+                const tokenTo = this.getAttribute('tokenTo', true, '');
+                const defaultChainId = this.getAttribute('defaultChainId', true);
+                const showHeader = this.getAttribute('showHeader', true);
+                const data = {
+                    chainId,
+                    tokenFrom,
+                    tokenTo,
+                    defaultChainId,
+                    showHeader
+                };
+                await this.setData(data);
+            }
             this.loadingElm.visible = false;
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
+        }
+        renderPair() {
+            this.infoStack.clearInnerHTML();
+            const { chainId, tokenFrom, tokenTo } = this._data;
+            if (!chainId || !tokenFrom || !tokenTo) {
+                this.infoStack.visible = false;
+                this.emptyStack.visible = true;
+            }
+            else {
+                this.infoStack.appendChild(this.$render("i-vstack", { class: index_css_1.groupQueuePairStyle, horizontalAlignment: "center", verticalAlignment: "center" },
+                    this.$render("i-label", { padding: { top: 16 }, caption: `${(0, index_1.getTokenSymbol)(chainId, tokenFrom)} to ${(0, index_1.getTokenSymbol)(chainId, tokenTo)}`, font: { bold: true } }),
+                    this.$render("i-hstack", { padding: { bottom: 16, top: 16, left: 16, right: 16 }, horizontalAlignment: "center", verticalAlignment: "center" },
+                        this.$render("i-image", { width: 75, url: (0, index_1.getTokenIcon)(chainId, tokenFrom) }),
+                        this.$render("i-image", { width: 75, class: "icon-right", url: (0, index_1.getTokenIcon)(chainId, tokenTo) }))));
+                this.infoStack.visible = true;
+                this.emptyStack.visible = false;
+            }
         }
         _getActions(category) {
             var _a;
@@ -344,6 +408,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
         async setData(data) {
             this._data = data;
+            scom_token_list_3.tokenStore.updateTokenMapData(this._data.chainId || this.chainId);
+            this.renderPair();
         }
         async getTag() {
             return this.tag;
@@ -387,7 +453,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
     };
     ScomGroupQueuePair = __decorate([
-        (0, components_3.customElements)('i-scom-group-queue-pair')
+        (0, components_4.customElements)('i-scom-group-queue-pair')
     ], ScomGroupQueuePair);
     exports.default = ScomGroupQueuePair;
 });
