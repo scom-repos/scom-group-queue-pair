@@ -1,4 +1,4 @@
-import { Button, ControlElement, customElements, Label, Module, Panel, Styles, VStack } from '@ijstech/components';
+import { application, Button, ControlElement, customElements, Label, Module, Panel, Styles, VStack } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
 import { IGroupQueuePair, Pair } from './interface';
@@ -12,7 +12,7 @@ import ScomTokenInput from '@scom/scom-token-input';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
 import { primaryButtonStyle, tokenInputStyle } from './index.css';
-import { getGroupQueuePairs, isGroupQueueOracleSupported } from './api';
+import { doCreatePair, getGroupQueuePairs, isGroupQueueOracleSupported } from './api';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -50,6 +50,8 @@ export default class ScomGroupQueuePair extends Module {
         networks: []
     };
     private _pairs: Pair[] = [];
+    private fromPairToken: string;
+    private toPairToken: string;
     tag: any = {};
 
     private get chainId() {
@@ -221,6 +223,10 @@ export default class ScomGroupQueuePair extends Module {
         const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
         const rpcWallet = this.state.getRpcWallet();
         const chainChangedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.ChainChanged, async (chainId: number) => {
+            this.fromTokenInput.token = null;
+            this.toTokenInput.token = null;
+            this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
+            this.fromPairToken = this.toPairToken = "";
             this.refreshUI();
         });
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
@@ -260,45 +266,46 @@ export default class ScomGroupQueuePair extends Module {
             await this.initWallet();
             if (!isClientWalletConnected()) {
                 this.btnCreate.caption = "Connect Wallet";
+                this.btnCreate.enabled = true;
             } else if (!this.state.isRpcWalletConnected()) {
                 this.btnCreate.caption = "Switch Network";
+                this.btnCreate.enabled = true;
             } else {
                 this.btnCreate.caption = "Create";
-            }
-            if (this.state.isRpcWalletConnected()) {
-                this.pairs = await getGroupQueuePairs(this.state);
+                this.btnCreate.enabled = false;
             }
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
-            if (this.fromTokenInput.chainId !== chainId) {
-                this.fromTokenInput.chainId = chainId;
-                this.fromTokenInput.token = null;
-                this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
-            }
-            if (this.toTokenInput.chainId !== chainId) {
-                this.toTokenInput.chainId = chainId;
-                this.toTokenInput.token = null;
-                this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
+            if (this.state.isRpcWalletConnected()) {
+                this.pairs = await getGroupQueuePairs(this.state);
             }
         })
     }
 
-    private async onSelectToken(isFrom: boolean) {
-        this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
-        this.btnCreate.enabled = false;
-        if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
-        if (this.fromTokenInput.token === this.toTokenInput.token) {
+    private async onSelectToken(token: ITokenObject, isFrom: boolean) {
+        const targetToken = (token.address || token.symbol)?.toLowerCase();
+        let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
+        let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
+        if (isFrom && targetToken === this.fromPairToken) return;
+        if (!isFrom && targetToken === this.toPairToken) return;
+        if (fromToken && toToken && fromToken === toToken) {
             if (isFrom) {
                 this.toTokenInput.token = null;
+                toToken = "";
             } else {
                 this.fromTokenInput.token = null;
+                fromToken = "";
             }
+        }
+        this.fromPairToken = fromToken;
+        this.toPairToken = toToken;
+        if (!this.fromTokenInput.token || !this.toTokenInput.token) {
+            this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
+            this.btnCreate.enabled = false;
             return;
         }
-        const fromToken = (this.fromTokenInput.token.address || this.fromTokenInput.token.symbol).toLowerCase();
-        const toToken = (this.toTokenInput.token.address || this.toTokenInput.token.symbol).toLowerCase();
-        const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromToken && pair.toToken.toLowerCase() === toToken);
+        const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
         if (isPairExisted) {
             this.pnlInfo.visible = true;
             this.msgCreatePair.visible = true;
@@ -308,9 +315,9 @@ export default class ScomGroupQueuePair extends Module {
             this.fromTokenInput.tokenReadOnly = true;
             this.toTokenInput.tokenReadOnly = true;
             const WETH9 = getWETH(this.chainId);
-            const fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
-            const toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
-            const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
+            this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
+            this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
+            const isSupported = await isGroupQueueOracleSupported(this.state, this.fromPairToken, this.toPairToken);
             this.btnCreate.enabled = isSupported;
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
             if (!isSupported) {
@@ -318,6 +325,65 @@ export default class ScomGroupQueuePair extends Module {
             }
             this.fromTokenInput.tokenReadOnly = false;
             this.toTokenInput.tokenReadOnly = false;
+        }
+    }
+
+    private showResultMessage = (status: 'warning' | 'success' | 'error', content?: string | Error) => {
+        if (!this.txStatusModal) return;
+        let params: any = { status };
+        if (status === 'success') {
+            params.txtHash = content;
+        } else {
+            params.content = content;
+        }
+        this.txStatusModal.message = { ...params };
+        this.txStatusModal.showModal();
+    }
+
+    private connectWallet = async () => {
+        if (!isClientWalletConnected()) {
+            if (this.mdWallet) {
+                await application.loadPackage('@scom/scom-wallet-modal', '*');
+                this.mdWallet.networks = this.networks;
+                this.mdWallet.wallets = this.wallets;
+                this.mdWallet.showModal();
+            }
+            return;
+        }
+        if (!this.state.isRpcWalletConnected()) {
+            const clientWallet = Wallet.getClientInstance();
+            await clientWallet.switchNetwork(this.chainId);
+        }
+    }
+
+    private async onCreatePair() {
+        try {
+            if (!this.state.isRpcWalletConnected()) {
+                this.connectWallet();
+                return;
+            }
+            if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
+
+            this.showResultMessage('warning', 'Creating a new pair');
+            this.fromTokenInput.tokenReadOnly = true;
+            this.toTokenInput.tokenReadOnly = true;
+            this.btnCreate.rightIcon.spin = true;
+            this.btnCreate.rightIcon.visible = true;
+
+            const { error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
+            if (error) {
+                this.showResultMessage('error', error as any);
+            } else {
+                this.fromPairToken = '';
+                this.toPairToken = '';
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            this.fromTokenInput.tokenReadOnly = false;
+            this.toTokenInput.tokenReadOnly = false;
+            this.btnCreate.rightIcon.spin = false;
+            this.btnCreate.rightIcon.visible = false;
         }
     }
 
@@ -349,7 +415,7 @@ export default class ScomGroupQueuePair extends Module {
                                     isBtnMaxShown={false}
                                     isInputShown={false}
                                     border={{ radius: 12 }}
-                                    onSelectToken={() => this.onSelectToken(true)}
+                                    onSelectToken={(token: ITokenObject) => this.onSelectToken(token, true)}
                                 ></i-scom-token-input>
                                 <i-label caption="to" font={{ size: "1rem" }}></i-label>
                                 <i-scom-token-input
@@ -360,7 +426,7 @@ export default class ScomGroupQueuePair extends Module {
                                     isBtnMaxShown={false}
                                     isInputShown={false}
                                     border={{ radius: 12 }}
-                                    onSelectToken={() => this.onSelectToken(false)}
+                                    onSelectToken={(token: ITokenObject) => this.onSelectToken(token, false)}
                                 ></i-scom-token-input>
                             </i-hstack>
                             <i-vstack id="pnlInfo" padding={{ left: "3rem", right: "3rem" }} gap="0.5rem" visible={false}>
@@ -374,7 +440,7 @@ export default class ScomGroupQueuePair extends Module {
                                 ></i-label>
                             </i-vstack>
                             <i-hstack horizontalAlignment="center" verticalAlignment="center" margin={{ top: "0.5rem" }}>
-                                <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create" enabled={false}></i-button>
+                                <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create" enabled={false} onClick={this.onCreatePair.bind(this)}></i-button>
                             </i-hstack>
                         </i-vstack>
                     </i-panel>

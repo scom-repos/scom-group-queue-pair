@@ -60,6 +60,7 @@ export default class Module1 extends Module {
             <i-panel>
                 <i-hstack id="mainStack" margin={{ top: '1rem', left: '1rem' }} gap="2rem">
                     <i-scom-group-queue-pair
+                        width={600}
                         defaultChainId={43113}
                         networks={[
                             {

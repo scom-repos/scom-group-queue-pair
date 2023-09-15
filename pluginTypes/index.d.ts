@@ -2,7 +2,6 @@
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
-/// <reference path="@ijstech/eth-contract/index.d.ts" />
 /// <amd-module name="@scom/scom-group-queue-pair/assets.ts" />
 declare module "@scom/scom-group-queue-pair/assets.ts" {
     function fullPath(path: string): string;
@@ -138,11 +137,14 @@ declare module "@scom/scom-group-queue-pair/index.css.ts" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair/api.ts" />
 declare module "@scom/scom-group-queue-pair/api.ts" {
-    import { Wallet } from "@ijstech/eth-wallet";
+    import { TransactionReceipt } from "@ijstech/eth-wallet";
     import { Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { State } from "@scom/scom-group-queue-pair/store/index.ts";
     export const nullAddress = "0x0000000000000000000000000000000000000000";
-    export function doCreatePair(wallet: Wallet, restrictedFactory: string, tokenA: string, tokenB: string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
+    export function doCreatePair(state: State, tokenA: string, tokenB: string): Promise<{
+        receipt: TransactionReceipt | null;
+        error: Record<string, string> | null;
+    }>;
     export function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string): Promise<boolean>;
     export function getGroupQueuePairs(state: State): Promise<Pair[]>;
 }
@@ -180,6 +182,8 @@ declare module "@scom/scom-group-queue-pair" {
         private state;
         private _data;
         private _pairs;
+        private fromPairToken;
+        private toPairToken;
         tag: any;
         private get chainId();
         get defaultChainId(): number;
@@ -225,6 +229,9 @@ declare module "@scom/scom-group-queue-pair" {
         private initWallet;
         private initializeWidgetConfig;
         private onSelectToken;
+        private showResultMessage;
+        private connectWallet;
+        private onCreatePair;
         render(): any;
     }
 }

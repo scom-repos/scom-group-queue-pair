@@ -1,6 +1,6 @@
-import { Wallet } from "@ijstech/eth-wallet"
+import { BigNumber, TransactionReceipt, Wallet } from "@ijstech/eth-wallet"
 import { Contracts } from '@scom/oswap-openswap-contract';
-import { ChainNativeTokenByChainId, ITokenObject } from "@scom/scom-token-list";
+import { ChainNativeTokenByChainId } from "@scom/scom-token-list";
 import { Pair } from "./interface";
 import { getWETH, State } from "./store/index";
 
@@ -12,21 +12,29 @@ const getAddressByKey = (state: State, key: string) => {
     return Address[key];
 }
 
-const mapTokenObjectSet = (state: State, obj: any) => {
-    let chainId = state.getChainId();
-    const WETH9 = getWETH(chainId);
-    for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            if (!obj[key]?.address) obj[key] = WETH9;
+export async function doCreatePair(state: State, tokenA: string, tokenB: string): Promise<{
+    receipt: TransactionReceipt | null;
+    error: Record<string, string> | null;
+}> {
+    let receipt: TransactionReceipt | null = null;
+    const wallet: any = Wallet.getClientInstance();
+    try {
+        let token0: string
+        let token1: string
+        if (new BigNumber(tokenA.toLowerCase()).lt(tokenB.toLowerCase())) {
+            token0 = tokenA;
+            token1 = tokenB;
+        } else {
+            token0 = tokenB;
+            token1 = tokenA;
         }
+        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
+        receipt = await factoryContract.createPair({ tokenA: token0, tokenB: token1 });
+    } catch (error) {
+        return { receipt: null, error: error as any };
     }
-    return obj;
-}
-
-export async function doCreatePair(wallet: Wallet, restrictedFactory: string, tokenA: string, tokenB: string) {
-    const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, restrictedFactory);
-    const receipt = await factoryContract.createPair({ tokenA, tokenB });
-    return receipt;
+    return { receipt, error: null };
 }
 
 export async function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string) {
