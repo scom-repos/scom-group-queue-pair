@@ -1,10 +1,45 @@
 import { Styles } from '@ijstech/components';
 const Theme = Styles.Theme.ThemeVars;
 
-export const groupQueuePairStyle = Styles.style({
+export const tokenInputStyle = Styles.style({
+    background: Theme.input.background,
     $nest: {
-        '.icon-right': {
-            transform: 'translate(-10px, 0)',
+        '#gridTokenInput': {
+            transition: 'none'
+        },
+        '#btnToken': {
+            fontSize: "1rem",
+            fontWeight: 700,
+            lineHeight: 1.5,
+            alignSelf: 'center',
+            textAlign: 'center',
+            opacity: 1,
+            color: Theme.input.fontColor,
+        },
+    }
+})
+
+export const primaryButtonStyle = Styles.style({
+    fontSize: '1rem',
+    fontWeight: 600,
+    lineHeight: 1.5,
+    verticalAlign: 'middle',
+    color: Theme.colors.primary.contrastText,
+    borderRadius: '0.65rem',
+    padding: '0.5rem 0.75rem',
+    transition: 'background .3s ease',
+    opacity: 1,
+    $nest: {
+        '&:not(.disabled):not(.is-spinning):hover': {
+            boxShadow: 'none',
+            opacity: .9
+        },
+        '&:not(.disabled):not(.is-spinning):focus': {
+            boxShadow: '0 0 0 0.2rem rgb(0 123 255 / 25%)',
+            opacity: .9
+        },
+        '&.disabled': {
+            opacity: 1
         },
     }
 })

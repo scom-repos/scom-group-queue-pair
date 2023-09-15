@@ -8,9 +8,11 @@
         "@scom/scom-multicall",
         "@scom/scom-dapp-container",
         "@scom/scom-network-picker",
+        "@scom/scom-wallet-modal",
         "@scom/scom-token-modal",
         "@scom/scom-token-list",
         "@scom/scom-token-input",
-        "@ijstech/eth-wallet"
+        "@ijstech/eth-wallet",
+        "@scom/scom-tx-status-modal"
     ]
 }

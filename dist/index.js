@@ -35,70 +35,63 @@ define("@scom/scom-group-queue-pair/interface.ts", ["require", "exports"], funct
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@scom/scom-network-picker", "@scom/scom-token-input", "@scom/scom-token-list"], function (require, exports, scom_network_picker_1, scom_token_input_1, scom_token_list_1) {
+define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@scom/scom-network-picker"], function (require, exports, scom_network_picker_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114];
+    const networks = chainIds.map(v => { return { chainId: v }; });
     exports.default = {
         dataSchema: {
             type: 'object',
             properties: {
-                chainId: {
-                    type: 'number',
-                    required: true
+                networks: {
+                    type: 'array',
+                    required: true,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            chainId: {
+                                type: 'number',
+                                enum: chainIds,
+                                required: true
+                            }
+                        }
+                    }
                 },
-                tokenFrom: {
-                    type: 'string'
-                },
-                tokenTo: {
-                    type: 'string'
-                }
             }
         },
         uiSchema: {
             type: 'VerticalLayout',
             elements: [
                 {
-                    type: 'Control',
-                    scope: '#/properties/chainId'
-                },
-                {
-                    type: 'Control',
-                    scope: '#/properties/tokenFrom'
-                },
-                {
-                    type: 'Control',
-                    scope: '#/properties/tokenTo'
+                    type: 'HorizontalLayout',
+                    elements: [
+                        {
+                            type: 'Category',
+                            label: 'Networks',
+                            elements: [
+                                {
+                                    type: 'Control',
+                                    scope: '#/properties/networks',
+                                    options: {
+                                        detail: {
+                                            type: 'VerticalLayout'
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                    ]
                 }
             ]
         },
-        customControls(rpcWalletId) {
-            let networkPicker;
-            let tokenFromInput;
-            let tokenToInput;
-            const setTokenData = (control, value) => {
-                var _a;
-                if (!value) {
-                    const chainId = (_a = networkPicker === null || networkPicker === void 0 ? void 0 : networkPicker.selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
-                    const tokens = scom_token_list_1.tokenStore.getTokenList(chainId);
-                    let token = tokens.find(token => !token.address);
-                    control.token = token;
-                }
-                else {
-                    control.address = value;
-                }
-            };
+        customControls() {
             return {
-                '#/properties/chainId': {
+                '#/properties/networks/properties/chainId': {
                     render: () => {
-                        networkPicker = new scom_network_picker_1.default(undefined, {
+                        const networkPicker = new scom_network_picker_1.default(undefined, {
                             type: 'combobox',
-                            networks: [1, 56, 137, 250, 97, 80001, 43113, 43114].map(v => { return { chainId: v }; }),
-                            onCustomNetworkSelected: () => {
-                                var _a;
-                                const chainId = (_a = networkPicker.selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
-                                tokenFromInput.chainId = chainId;
-                                tokenToInput.chainId = chainId;
-                            }
+                            networks
                         });
                         return networkPicker;
                     },
@@ -108,55 +101,7 @@ define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@sco
                     },
                     setData: (control, value) => {
                         control.setNetworkByChainId(value);
-                        if (tokenFromInput)
-                            tokenFromInput.chainId = value;
-                        if (tokenToInput)
-                            tokenToInput.chainId = value;
                     }
-                },
-                '#/properties/tokenFrom': {
-                    render: () => {
-                        var _a;
-                        tokenFromInput = new scom_token_input_1.default(undefined, {
-                            type: 'combobox',
-                            isBalanceShown: false,
-                            isBtnMaxShown: false,
-                            isInputShown: false
-                        });
-                        tokenFromInput.rpcWalletId = rpcWalletId;
-                        const chainId = (_a = networkPicker === null || networkPicker === void 0 ? void 0 : networkPicker.selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
-                        if (chainId && tokenFromInput.chainId !== chainId) {
-                            tokenFromInput.chainId = chainId;
-                        }
-                        return tokenFromInput;
-                    },
-                    getData: (control) => {
-                        var _a;
-                        return ((_a = control.token) === null || _a === void 0 ? void 0 : _a.address) || "";
-                    },
-                    setData: setTokenData
-                },
-                '#/properties/tokenTo': {
-                    render: () => {
-                        var _a;
-                        tokenToInput = new scom_token_input_1.default(undefined, {
-                            type: 'combobox',
-                            isBalanceShown: false,
-                            isBtnMaxShown: false,
-                            isInputShown: false
-                        });
-                        tokenToInput.rpcWalletId = rpcWalletId;
-                        const chainId = (_a = networkPicker === null || networkPicker === void 0 ? void 0 : networkPicker.selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
-                        if (chainId && tokenToInput.chainId !== chainId) {
-                            tokenToInput.chainId = chainId;
-                        }
-                        return tokenToInput;
-                    },
-                    getData: (control) => {
-                        var _a;
-                        return ((_a = control.token) === null || _a === void 0 ? void 0 : _a.address) || "";
-                    },
-                    setData: setTokenData
                 }
             };
         }
@@ -178,7 +123,7 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
 define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-group-queue-pair/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, core_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.State = void 0;
+    exports.isClientWalletConnected = exports.State = void 0;
     class State {
         constructor(options) {
             this.infuraId = '';
@@ -252,21 +197,26 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
         }
     }
     exports.State = State;
+    function isClientWalletConnected() {
+        const wallet = eth_wallet_1.Wallet.getClientInstance();
+        return wallet.isConnected;
+    }
+    exports.isClientWalletConnected = isClientWalletConnected;
 });
-define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, scom_token_list_2, utils_1) {
+define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, scom_token_list_1, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getTokenSymbol = exports.getTokenIcon = void 0;
     const getToken = (chainId, address) => {
-        const tokenMap = scom_token_list_2.tokenStore.tokenMap;
-        const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_2.ChainNativeTokenByChainId[chainId];
+        const tokenMap = scom_token_list_1.tokenStore.tokenMap;
+        const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_1.ChainNativeTokenByChainId[chainId];
         return tokenObject;
     };
     const getTokenIcon = (chainId, address) => {
         if (address == null)
             return '';
         const tokenObject = getToken(chainId, address);
-        const path = scom_token_list_2.assets.tokenPath(tokenObject, chainId);
+        const path = scom_token_list_1.assets.tokenPath(tokenObject, chainId);
         return path;
     };
     exports.getTokenIcon = getTokenIcon;
@@ -302,17 +252,51 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
 define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.groupQueuePairStyle = void 0;
+    exports.primaryButtonStyle = exports.tokenInputStyle = void 0;
     const Theme = components_3.Styles.Theme.ThemeVars;
-    exports.groupQueuePairStyle = components_3.Styles.style({
+    exports.tokenInputStyle = components_3.Styles.style({
+        background: Theme.input.background,
         $nest: {
-            '.icon-right': {
-                transform: 'translate(-10px, 0)',
+            '#gridTokenInput': {
+                transition: 'none'
+            },
+            '#btnToken': {
+                fontSize: "1rem",
+                fontWeight: 700,
+                lineHeight: 1.5,
+                alignSelf: 'center',
+                textAlign: 'center',
+                opacity: 1,
+                color: Theme.input.fontColor,
+            },
+        }
+    });
+    exports.primaryButtonStyle = components_3.Styles.style({
+        fontSize: '1rem',
+        fontWeight: 600,
+        lineHeight: 1.5,
+        verticalAlign: 'middle',
+        color: Theme.colors.primary.contrastText,
+        borderRadius: '0.65rem',
+        padding: '0.5rem 0.75rem',
+        transition: 'background .3s ease',
+        opacity: 1,
+        $nest: {
+            '&:not(.disabled):not(.is-spinning):hover': {
+                boxShadow: 'none',
+                opacity: .9
+            },
+            '&:not(.disabled):not(.is-spinning):focus': {
+                boxShadow: '0 0 0 0.2rem rgb(0 123 255 / 25%)',
+                opacity: .9
+            },
+            '&.disabled': {
+                opacity: 1
             },
         }
     });
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-token-list"], function (require, exports, components_4, assets_1, formSchema_1, index_1, data_json_1, index_css_1, scom_token_list_3) {
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts"], function (require, exports, components_4, assets_1, formSchema_1, index_1, data_json_1, eth_wallet_2, scom_token_list_2, index_css_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
@@ -320,11 +304,41 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         constructor() {
             super(...arguments);
             this._data = {
-                chainId: 0,
-                tokenFrom: '',
-                tokenTo: ''
+                wallets: [],
+                networks: []
             };
             this.tag = {};
+            this.initWallet = async () => {
+                try {
+                    await eth_wallet_2.Wallet.getClientInstance().init();
+                    const rpcWallet = this.state.getRpcWallet();
+                    await rpcWallet.init();
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            };
+            this.initializeWidgetConfig = async () => {
+                setTimeout(async () => {
+                    const chainId = this.chainId;
+                    await this.initWallet();
+                    if (!(0, index_1.isClientWalletConnected)()) {
+                        this.btnCreate.caption = "Connect Wallet";
+                    }
+                    else if (!this.state.isRpcWalletConnected()) {
+                        this.btnCreate.caption = "Switch Network";
+                    }
+                    else {
+                        this.btnCreate.caption = "Create";
+                    }
+                    const tokens = scom_token_list_2.tokenStore.getTokenList(chainId);
+                    this.fromTokenInput.tokenDataListProp = tokens;
+                    this.toTokenInput.tokenDataListProp = tokens;
+                    if (this.fromTokenInput.chainId !== chainId) {
+                        this.fromTokenInput.chainId = chainId;
+                    }
+                });
+            };
         }
         get chainId() {
             return this.state.getChainId();
@@ -332,21 +346,51 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         get rpcWallet() {
             return this.state.getRpcWallet();
         }
+        get defaultChainId() {
+            return this._data.defaultChainId;
+        }
+        set defaultChainId(value) {
+            this._data.defaultChainId = value;
+        }
+        get wallets() {
+            var _a;
+            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
+        }
+        set wallets(value) {
+            this._data.wallets = value;
+        }
+        get networks() {
+            var _a;
+            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
+        }
+        set networks(value) {
+            this._data.networks = value;
+        }
+        get showHeader() {
+            var _a;
+            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
+        }
+        set showHeader(value) {
+            this._data.showHeader = value;
+        }
+        removeRpcWalletEvents() {
+            const rpcWallet = this.state.getRpcWallet();
+            if (rpcWallet)
+                rpcWallet.unregisterAllWalletEvents();
+        }
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
             this.state = new index_1.State(data_json_1.default);
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
-                const chainId = this.getAttribute('chainId', true, 0);
-                const tokenFrom = this.getAttribute('tokenFrom', true, '');
-                const tokenTo = this.getAttribute('tokenTo', true, '');
+                const networks = this.getAttribute('networks', true);
+                const wallets = this.getAttribute('wallets', true);
                 const defaultChainId = this.getAttribute('defaultChainId', true);
                 const showHeader = this.getAttribute('showHeader', true);
                 const data = {
-                    chainId,
-                    tokenFrom,
-                    tokenTo,
+                    networks,
+                    wallets,
                     defaultChainId,
                     showHeader
                 };
@@ -356,25 +400,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
         }
-        renderPair() {
-            this.infoStack.clearInnerHTML();
-            const { chainId, tokenFrom, tokenTo } = this._data;
-            if (!chainId || !tokenFrom || !tokenTo) {
-                this.infoStack.visible = false;
-                this.emptyStack.visible = true;
-            }
-            else {
-                this.infoStack.appendChild(this.$render("i-vstack", { class: index_css_1.groupQueuePairStyle, horizontalAlignment: "center", verticalAlignment: "center" },
-                    this.$render("i-label", { padding: { top: 16 }, caption: `${(0, index_1.getTokenSymbol)(chainId, tokenFrom)} to ${(0, index_1.getTokenSymbol)(chainId, tokenTo)}`, font: { bold: true } }),
-                    this.$render("i-hstack", { padding: { bottom: 16, top: 16, left: 16, right: 16 }, horizontalAlignment: "center", verticalAlignment: "center" },
-                        this.$render("i-image", { width: 75, url: (0, index_1.getTokenIcon)(chainId, tokenFrom) }),
-                        this.$render("i-image", { width: 75, class: "icon-right", url: (0, index_1.getTokenIcon)(chainId, tokenTo) }))));
-                this.infoStack.visible = true;
-                this.emptyStack.visible = false;
-            }
-        }
         _getActions(category) {
-            var _a;
             const actions = [];
             if (category && category !== 'offers') {
                 actions.push({
@@ -384,12 +410,39 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     },
                     userInputDataSchema: formSchema_1.default.dataSchema,
                     userInputUISchema: formSchema_1.default.uiSchema,
-                    customControls: formSchema_1.default.customControls((_a = this.rpcWallet) === null || _a === void 0 ? void 0 : _a.instanceId)
+                    customControls: formSchema_1.default.customControls()
                 });
             }
         }
+        getProjectOwnerActions() {
+            const actions = [
+                {
+                    name: 'Settings',
+                    userInputDataSchema: formSchema_1.default.dataSchema,
+                    userInputUISchema: formSchema_1.default.uiSchema,
+                    customControls: formSchema_1.default.customControls()
+                }
+            ];
+            return actions;
+        }
         getConfigurators() {
             return [
+                {
+                    name: 'Project Owner Configurator',
+                    target: 'Project Owners',
+                    getProxySelectors: async (chainId) => {
+                        return [];
+                    },
+                    getActions: () => {
+                        return this.getProjectOwnerActions();
+                    },
+                    getData: this.getData.bind(this),
+                    setData: async (data) => {
+                        await this.setData(data);
+                    },
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                },
                 {
                     name: 'Builder Configurator',
                     target: 'Builders',
@@ -408,8 +461,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
         async setData(data) {
             this._data = data;
-            scom_token_list_3.tokenStore.updateTokenMapData(this._data.chainId || this.chainId);
-            this.renderPair();
+            this.resetRpcWallet();
+            await this.refreshUI();
         }
         async getTag() {
             return this.tag;
@@ -435,21 +488,52 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             if (this.dappContainer)
                 this.dappContainer.setTag(this.tag);
         }
+        resetRpcWallet() {
+            var _a;
+            this.removeRpcWalletEvents();
+            const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
+            const rpcWallet = this.state.getRpcWallet();
+            const chainChangedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.ChainChanged, async (chainId) => {
+            });
+            const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.Connected, async (connected) => {
+            });
+            if (rpcWallet.instanceId) {
+                if (this.fromTokenInput)
+                    this.fromTokenInput.rpcWalletId = rpcWallet.instanceId;
+                if (this.toTokenInput)
+                    this.toTokenInput.rpcWalletId = rpcWallet.instanceId;
+            }
+            const data = {
+                defaultChainId: this.defaultChainId,
+                wallets: this.wallets,
+                networks: this.networks,
+                showHeader: this.showHeader,
+                rpcWalletId: rpcWallet.instanceId
+            };
+            if ((_a = this.dappContainer) === null || _a === void 0 ? void 0 : _a.setData)
+                this.dappContainer.setData(data);
+        }
+        async refreshUI() {
+            await this.initializeWidgetConfig();
+        }
         render() {
             return (this.$render("i-scom-dapp-container", { id: "dappContainer" },
                 this.$render("i-panel", { background: { color: Theme.background.main } },
-                    this.$render("i-panel", { margin: { left: 'auto', right: 'auto' } },
+                    this.$render("i-panel", null,
                         this.$render("i-vstack", { id: "loadingElm", class: "i-loading-overlay" },
                             this.$render("i-vstack", { class: "i-loading-spinner", horizontalAlignment: "center", verticalAlignment: "center" },
                                 this.$render("i-icon", { class: "i-loading-spinner_icon", image: { url: assets_1.default.fullPath('img/loading.svg'), width: 36, height: 36 } }),
                                 this.$render("i-label", { caption: "Loading...", font: { color: '#FD4A4C', size: '1.5em' }, class: "i-loading-spinner_text" }))),
-                        this.$render("i-vstack", { id: "emptyStack", visible: false, minHeight: 320, margin: { top: 10, bottom: 10 }, verticalAlignment: "center", horizontalAlignment: "center" },
-                            this.$render("i-panel", { width: "100%", height: "100%" },
-                                this.$render("i-vstack", { height: "100%", background: { color: Theme.background.main }, verticalAlignment: "center" },
-                                    this.$render("i-vstack", { gap: 10, verticalAlignment: "center", horizontalAlignment: "center" },
-                                        this.$render("i-image", { url: assets_1.default.fullPath('img/TrollTrooper.svg') }),
-                                        this.$render("i-label", { caption: "No Pairs" }))))),
-                        this.$render("i-vstack", { id: "infoStack", width: "100%", height: "100%" })))));
+                        this.$render("i-vstack", { width: "100%", height: "100%", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, gap: "1.5rem" },
+                            this.$render("i-label", { caption: "Create a new Pair", font: { size: '1.25rem', weight: 700, color: Theme.colors.primary.main } }),
+                            this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
+                                this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
+                                this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
+                                this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } })),
+                            this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", margin: { top: "0.5rem" } },
+                                this.$render("i-button", { id: "btnCreate", class: index_css_1.primaryButtonStyle, width: 150, caption: "Create" })))),
+                    this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
+                    this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
         }
     };
     ScomGroupQueuePair = __decorate([

@@ -1,7 +1,9 @@
+import { INetworkConfig } from "@scom/scom-network-picker";
+import { IWalletPlugin } from "@scom/scom-wallet-modal";
+
 export interface IGroupQueuePair {
-    chainId: number;
-    tokenFrom: string;
-    tokenTo: string;
+    wallets: IWalletPlugin[];
+    networks: INetworkConfig[];
     defaultChainId?: number;
     showHeader?: boolean;
 }

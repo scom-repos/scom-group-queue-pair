@@ -1,19 +1,24 @@
-import { ControlElement, customElements, Module, Panel, Styles, VStack } from '@ijstech/components';
+import { Button, ControlElement, customElements, Module, Panel, Styles, VStack } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
 import { IGroupQueuePair } from './interface';
 import formSchema from './formSchema';
-import { getTokenIcon, getTokenSymbol, State } from './store/index';
+import { isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
-import { groupQueuePairStyle } from './index.css';
+import { INetworkConfig } from '@scom/scom-network-picker';
+import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
+import ScomTxStatusModal from '@scom/scom-tx-status-modal';
+import ScomTokenInput from '@scom/scom-token-input';
+import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { tokenStore } from '@scom/scom-token-list';
+import { primaryButtonStyle, tokenInputStyle } from './index.css';
+
 const Theme = Styles.Theme.ThemeVars;
 
 interface ScomGroupQueuePairElement extends ControlElement {
     lazyLoad?: boolean;
-    chainId?: number;
-    tokenFrom?: string;
-    tokenTo?: string;
+	networks: INetworkConfig[];
+	wallets: IWalletPlugin[];
     defaultChainId?: number;
     showHeader?: boolean;
 }
@@ -30,13 +35,15 @@ declare global {
 export default class ScomGroupQueuePair extends Module {
     private dappContainer: ScomDappContainer;
     private loadingElm: Panel;
-    private emptyStack: VStack;
-    private infoStack: VStack;
+    private fromTokenInput: ScomTokenInput;
+    private toTokenInput: ScomTokenInput;
+    private btnCreate: Button;
+	private txStatusModal: ScomTxStatusModal;
+	private mdWallet: ScomWalletModal;
     private state: State;
     private _data: IGroupQueuePair = {
-        chainId: 0,
-        tokenFrom: '',
-        tokenTo: ''
+		wallets: [],
+		networks: []
     };
     tag: any = {};
 
@@ -48,21 +55,53 @@ export default class ScomGroupQueuePair extends Module {
         return this.state.getRpcWallet();
     }
 
+    get defaultChainId() {
+      return this._data.defaultChainId;
+    }
+  
+    set defaultChainId(value: number) {
+      this._data.defaultChainId = value;
+    }
+
+    get wallets() {
+      return this._data.wallets ?? [];
+    }
+    set wallets(value: IWalletPlugin[]) {
+      this._data.wallets = value;
+    }
+  
+    get networks() {
+      return this._data.networks ?? [];
+    }
+    set networks(value: INetworkConfig[]) {
+      this._data.networks = value;
+    }
+  
+    get showHeader() {
+      return this._data.showHeader ?? true;
+    }
+    set showHeader(value: boolean) {
+      this._data.showHeader = value;
+    }
+
+    removeRpcWalletEvents() {
+      const rpcWallet = this.state.getRpcWallet();
+      if (rpcWallet) rpcWallet.unregisterAllWalletEvents();
+    }
+
     async init() {
         this.isReadyCallbackQueued = true;
         super.init();
         this.state = new State(configData);
         const lazyLoad = this.getAttribute('lazyLoad', true, false);
         if (!lazyLoad) {
-            const chainId = this.getAttribute('chainId', true, 0);
-            const tokenFrom = this.getAttribute('tokenFrom', true, '');
-            const tokenTo = this.getAttribute('tokenTo', true, '');
+			const networks = this.getAttribute('networks', true);
+			const wallets = this.getAttribute('wallets', true);
             const defaultChainId = this.getAttribute('defaultChainId', true);
             const showHeader = this.getAttribute('showHeader', true);
             const data: IGroupQueuePair = {
-                chainId,
-                tokenFrom,
-                tokenTo,
+                networks,
+                wallets,
                 defaultChainId,
                 showHeader
             }
@@ -71,27 +110,6 @@ export default class ScomGroupQueuePair extends Module {
         this.loadingElm.visible = false;
         this.isReadyCallbackQueued = false;
         this.executeReadyCallback();
-    }
-
-    private renderPair() {
-        this.infoStack.clearInnerHTML();
-        const { chainId, tokenFrom, tokenTo } = this._data;
-        if (!chainId || !tokenFrom || !tokenTo) {
-            this.infoStack.visible = false;
-            this.emptyStack.visible = true;
-        } else {
-            this.infoStack.appendChild(
-                <i-vstack class={groupQueuePairStyle} horizontalAlignment="center" verticalAlignment="center">
-                    <i-label padding={{ top: 16 }} caption={`${getTokenSymbol(chainId, tokenFrom)} to ${getTokenSymbol(chainId, tokenTo)}`} font={{ bold: true }} />
-                    <i-hstack padding={{ bottom: 16, top: 16, left: 16, right: 16 }} horizontalAlignment="center" verticalAlignment="center">
-                        <i-image width={75} url={getTokenIcon(chainId, tokenFrom)} />
-                        <i-image width={75} class="icon-right" url={getTokenIcon(chainId, tokenTo)} />
-                    </i-hstack>
-                </i-vstack>
-            )
-            this.infoStack.visible = true;
-            this.emptyStack.visible = false;
-        }
     }
 
     private _getActions(category?: string) {
@@ -104,13 +122,41 @@ export default class ScomGroupQueuePair extends Module {
                 },
                 userInputDataSchema: formSchema.dataSchema,
                 userInputUISchema: formSchema.uiSchema,
-                customControls: formSchema.customControls(this.rpcWallet?.instanceId)
+                customControls: formSchema.customControls()
             })
         }
     }
 
+	private getProjectOwnerActions() {
+		const actions: any[] = [
+			{
+				name: 'Settings',
+				userInputDataSchema: formSchema.dataSchema,
+				userInputUISchema: formSchema.uiSchema,
+				customControls: formSchema.customControls()
+			}
+		];
+		return actions;
+	}
+
     getConfigurators() {
         return [
+            {
+				name: 'Project Owner Configurator',
+				target: 'Project Owners',
+				getProxySelectors: async (chainId: number) => {
+					return [];
+				},
+				getActions: () => {
+					return this.getProjectOwnerActions();
+				},
+				getData: this.getData.bind(this),
+				setData: async (data: any) => {
+					await this.setData(data);
+				},
+				getTag: this.getTag.bind(this),
+				setTag: this.setTag.bind(this)
+			},
             {
                 name: 'Builder Configurator',
                 target: 'Builders',
@@ -131,8 +177,8 @@ export default class ScomGroupQueuePair extends Module {
 
     private async setData(data: IGroupQueuePair) {
         this._data = data;
-        tokenStore.updateTokenMapData(this._data.chainId || this.chainId);
-        this.renderPair();
+        this.resetRpcWallet();
+        await this.refreshUI();
     }
 
     async getTag() {
@@ -161,11 +207,67 @@ export default class ScomGroupQueuePair extends Module {
             this.dappContainer.setTag(this.tag);
     }
 
+    private resetRpcWallet() {
+        this.removeRpcWalletEvents();
+		const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
+        const rpcWallet = this.state.getRpcWallet();
+		const chainChangedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.ChainChanged, async (chainId: number) => {
+		});
+		const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
+		});
+        if (rpcWallet.instanceId) {
+            if (this.fromTokenInput) this.fromTokenInput.rpcWalletId = rpcWallet.instanceId;
+            if (this.toTokenInput) this.toTokenInput.rpcWalletId = rpcWallet.instanceId;
+        }
+        const data: any = {
+            defaultChainId: this.defaultChainId,
+            wallets: this.wallets,
+            networks: this.networks,
+            showHeader: this.showHeader,
+            rpcWalletId: rpcWallet.instanceId
+        };
+        if (this.dappContainer?.setData) this.dappContainer.setData(data);
+    }
+
+    private async refreshUI() {
+        await this.initializeWidgetConfig();
+    }
+
+    private initWallet = async () => {
+      try {
+        await Wallet.getClientInstance().init();
+        const rpcWallet = this.state.getRpcWallet();
+        await rpcWallet.init();
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    private initializeWidgetConfig = async () => {
+        setTimeout(async () => {
+            const chainId = this.chainId;
+            await this.initWallet();
+            if (!isClientWalletConnected()) {
+                this.btnCreate.caption = "Connect Wallet";
+            } else if (!this.state.isRpcWalletConnected()) {
+                this.btnCreate.caption = "Switch Network";
+            } else {
+                this.btnCreate.caption = "Create";
+            }
+            const tokens = tokenStore.getTokenList(chainId);
+            this.fromTokenInput.tokenDataListProp = tokens;
+            this.toTokenInput.tokenDataListProp = tokens;
+            if (this.fromTokenInput.chainId !== chainId) {
+                this.fromTokenInput.chainId = chainId;
+            }
+        })
+    }
+
     render() {
         return (
             <i-scom-dapp-container id="dappContainer">
                 <i-panel background={{ color: Theme.background.main }}>
-                    <i-panel margin={{ left: 'auto', right: 'auto' }}>
+                    <i-panel>
                         <i-vstack id="loadingElm" class="i-loading-overlay">
                             <i-vstack class="i-loading-spinner" horizontalAlignment="center" verticalAlignment="center">
                                 <i-icon
@@ -178,18 +280,36 @@ export default class ScomGroupQueuePair extends Module {
                                 />
                             </i-vstack>
                         </i-vstack>
-                        <i-vstack id="emptyStack" visible={false} minHeight={320} margin={{ top: 10, bottom: 10 }} verticalAlignment="center" horizontalAlignment="center">
-                            <i-panel width="100%" height="100%">
-                                <i-vstack height="100%" background={{ color: Theme.background.main }} verticalAlignment="center">
-                                    <i-vstack gap={10} verticalAlignment="center" horizontalAlignment="center">
-                                        <i-image url={Assets.fullPath('img/TrollTrooper.svg')} />
-                                        <i-label caption="No Pairs" />
-                                    </i-vstack>
-                                </i-vstack>
-                            </i-panel>
+                        <i-vstack width="100%" height="100%" padding={{ top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }} gap="1.5rem">
+                            <i-label caption="Create a new Pair" font={{ size: '1.25rem', weight: 700, color: Theme.colors.primary.main }}></i-label>
+                            <i-hstack horizontalAlignment="center" verticalAlignment="center" wrap='wrap' gap={10}>
+                                <i-scom-token-input
+                                    id="fromTokenInput"
+                                    type="combobox"
+                                    class={tokenInputStyle}
+                                    isBalanceShown={false}
+                                    isBtnMaxShown={false}
+                                    isInputShown={false}
+                                    border={{ radius: 12 }}
+                                ></i-scom-token-input>
+                                <i-label caption="to" font={{ size: "1rem" }}></i-label>
+                                <i-scom-token-input
+                                    id="toTokenInput"
+                                    type="combobox"
+                                    class={tokenInputStyle}
+                                    isBalanceShown={false}
+                                    isBtnMaxShown={false}
+                                    isInputShown={false}
+                                    border={{ radius: 12 }}
+                                ></i-scom-token-input>
+                            </i-hstack>
+                            <i-hstack horizontalAlignment="center" verticalAlignment="center" margin={{ top: "0.5rem" }}>
+                                <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create"></i-button>
+                            </i-hstack>
                         </i-vstack>
-                        <i-vstack id="infoStack" width="100%" height="100%"></i-vstack>
                     </i-panel>
+					<i-scom-tx-status-modal id="txStatusModal" />
+					<i-scom-wallet-modal id="mdWallet" wallets={[]} />
                 </i-panel>
             </i-scom-dapp-container>
         )
