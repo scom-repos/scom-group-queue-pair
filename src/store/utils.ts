@@ -1,6 +1,7 @@
 import { application } from "@ijstech/components";
 import { INetwork, Wallet } from "@ijstech/eth-wallet";
 import getNetworkList from "@scom/scom-network-list";
+import { ITokenObject, WETHByChainId } from "@scom/scom-token-list";
 import { coreAddress } from "./core";
 
 export class State {
@@ -88,4 +89,9 @@ export class State {
 export function isClientWalletConnected() {
   const wallet = Wallet.getClientInstance();
   return wallet.isConnected;
+}
+
+export const getWETH = (chainId: number): ITokenObject => {
+  let wrappedToken = WETHByChainId[chainId];
+  return wrappedToken;
 }

@@ -2,6 +2,7 @@
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@ijstech/eth-contract/index.d.ts" />
 /// <amd-module name="@scom/scom-group-queue-pair/assets.ts" />
 declare module "@scom/scom-group-queue-pair/assets.ts" {
     function fullPath(path: string): string;
@@ -20,6 +21,10 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         defaultChainId?: number;
         showHeader?: boolean;
     }
+    export type Pair = {
+        fromToken: string;
+        toToken: string;
+    };
 }
 /// <amd-module name="@scom/scom-group-queue-pair/formSchema.ts" />
 declare module "@scom/scom-group-queue-pair/formSchema.ts" {
@@ -79,12 +84,15 @@ declare module "@scom/scom-group-queue-pair/store/core.ts" {
         OSWAP_RestrictedFactory: string;
     }
     export const coreAddress: {
-        [chainId: number]: CoreAddress;
+        [chainId: number]: {
+            [contract: string]: string;
+        };
     };
 }
 /// <amd-module name="@scom/scom-group-queue-pair/store/utils.ts" />
 declare module "@scom/scom-group-queue-pair/store/utils.ts" {
     import { INetwork } from "@ijstech/eth-wallet";
+    import { ITokenObject } from "@scom/scom-token-list";
     export class State {
         infuraId: string;
         networkMap: {
@@ -98,9 +106,12 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
         isRpcWalletConnected(): boolean;
         getChainId(): number;
         private setNetworkList;
-        getAddresses(chainId?: number): {};
+        getAddresses(chainId?: number): {
+            [contract: string]: string;
+        };
     }
     export function isClientWalletConnected(): boolean;
+    export const getWETH: (chainId: number) => ITokenObject;
 }
 /// <amd-module name="@scom/scom-group-queue-pair/store/index.ts" />
 declare module "@scom/scom-group-queue-pair/store/index.ts" {
@@ -125,9 +136,20 @@ declare module "@scom/scom-group-queue-pair/index.css.ts" {
     export const tokenInputStyle: string;
     export const primaryButtonStyle: string;
 }
+/// <amd-module name="@scom/scom-group-queue-pair/api.ts" />
+declare module "@scom/scom-group-queue-pair/api.ts" {
+    import { Wallet } from "@ijstech/eth-wallet";
+    import { Pair } from "@scom/scom-group-queue-pair/interface.ts";
+    import { State } from "@scom/scom-group-queue-pair/store/index.ts";
+    export const nullAddress = "0x0000000000000000000000000000000000000000";
+    export function doCreatePair(wallet: Wallet, restrictedFactory: string, tokenA: string, tokenB: string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
+    export function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string): Promise<boolean>;
+    export function getGroupQueuePairs(state: State): Promise<Pair[]>;
+}
 /// <amd-module name="@scom/scom-group-queue-pair" />
 declare module "@scom/scom-group-queue-pair" {
     import { ControlElement, Module } from '@ijstech/components';
+    import { Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     interface ScomGroupQueuePairElement extends ControlElement {
@@ -149,14 +171,17 @@ declare module "@scom/scom-group-queue-pair" {
         private loadingElm;
         private fromTokenInput;
         private toTokenInput;
+        private pnlInfo;
+        private msgCreatePair;
+        private linkGov;
         private btnCreate;
         private txStatusModal;
         private mdWallet;
         private state;
         private _data;
+        private _pairs;
         tag: any;
         private get chainId();
-        private get rpcWallet();
         get defaultChainId(): number;
         set defaultChainId(value: number);
         get wallets(): IWalletPlugin[];
@@ -165,6 +190,8 @@ declare module "@scom/scom-group-queue-pair" {
         set networks(value: INetworkConfig[]);
         get showHeader(): boolean;
         set showHeader(value: boolean);
+        get pairs(): Pair[];
+        set pairs(value: Pair[]);
         removeRpcWalletEvents(): void;
         init(): Promise<void>;
         private _getActions;
@@ -197,6 +224,7 @@ declare module "@scom/scom-group-queue-pair" {
         private refreshUI;
         private initWallet;
         private initializeWidgetConfig;
+        private onSelectToken;
         render(): any;
     }
 }

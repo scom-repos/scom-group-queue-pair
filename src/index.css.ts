@@ -23,7 +23,7 @@ export const tokenInputStyle = Styles.style({
             textAlign: 'center',
             opacity: 1,
             color: Theme.input.fontColor,
-            padding: '0.25rem 0.75rem'
+            padding: '0.25rem 0.75rem !important'
         },
         '#pnlSelection': {
             height: '100%'
@@ -61,7 +61,8 @@ export const primaryButtonStyle = Styles.style({
             opacity: .9
         },
         '&.disabled': {
-            opacity: 1
+            opacity: 1,
+            color: Theme.colors.primary.contrastText
         },
     }
 })

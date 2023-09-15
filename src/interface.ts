@@ -7,3 +7,8 @@ export interface IGroupQueuePair {
     defaultChainId?: number;
     showHeader?: boolean;
 }
+
+export type Pair = {
+    fromToken: string
+    toToken: string
+}

@@ -1,8 +1,16 @@
-import { Module, customModule, Container, application } from '@ijstech/components';
+import { Module, customModule, Container, application, Styles } from '@ijstech/components';
 import { getMulticallInfoList } from '@scom/scom-multicall';
 import { INetwork } from '@ijstech/eth-wallet';
 import getNetworkList from '@scom/scom-network-list';
 import ScomBuyback from '@scom/scom-group-queue-pair';
+
+const Theme = Styles.Theme.defaultTheme;
+Theme.background.main = '#2c2626';
+Theme.text.primary = '#d3c0c0 ';
+Theme.input.background = '#272F39';
+Theme.input.fontColor = '#ffffff4d';
+Theme.action.disabledBackground = "transparent linear-gradient(270deg,#351f52,#552a42) 0% 0% no-repeat padding-box";
+Styles.Theme.applyTheme(Theme);
 
 @customModule
 export default class Module1 extends Module {

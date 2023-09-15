@@ -113,17 +113,23 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
     exports.coreAddress = void 0;
     exports.coreAddress = {
         56: {
+            WETH9: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
             OSWAP_RestrictedFactory: "0x91d137464b93caC7E2c2d4444a9D8609E4473B70",
         },
         97: {
+            WETH9: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
             OSWAP_RestrictedFactory: "0xa158FB71cA5EF59f707c6F8D0b9CC5765F97Fd60",
-        }
+        },
+        43113: {
+            WETH9: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+            OSWAP_RestrictedFactory: "0x6C99c8E2c587706281a5B66bA7617DA7e2Ba6e48",
+        },
     };
 });
-define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-group-queue-pair/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, core_1) {
+define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, scom_token_list_1, core_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.isClientWalletConnected = exports.State = void 0;
+    exports.getWETH = exports.isClientWalletConnected = exports.State = void 0;
     class State {
         constructor(options) {
             this.infuraId = '';
@@ -202,21 +208,26 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
         return wallet.isConnected;
     }
     exports.isClientWalletConnected = isClientWalletConnected;
+    const getWETH = (chainId) => {
+        let wrappedToken = scom_token_list_1.WETHByChainId[chainId];
+        return wrappedToken;
+    };
+    exports.getWETH = getWETH;
 });
-define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, scom_token_list_1, utils_1) {
+define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/utils.ts"], function (require, exports, scom_token_list_2, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getTokenSymbol = exports.getTokenIcon = void 0;
     const getToken = (chainId, address) => {
-        const tokenMap = scom_token_list_1.tokenStore.tokenMap;
-        const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_1.ChainNativeTokenByChainId[chainId];
+        const tokenMap = scom_token_list_2.tokenStore.tokenMap;
+        const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_2.ChainNativeTokenByChainId[chainId];
         return tokenObject;
     };
     const getTokenIcon = (chainId, address) => {
         if (address == null)
             return '';
         const tokenObject = getToken(chainId, address);
-        const path = scom_token_list_1.assets.tokenPath(tokenObject, chainId);
+        const path = scom_token_list_2.assets.tokenPath(tokenObject, chainId);
         return path;
     };
     exports.getTokenIcon = getTokenIcon;
@@ -276,7 +287,7 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
                 textAlign: 'center',
                 opacity: 1,
                 color: Theme.input.fontColor,
-                padding: '0.25rem 0.75rem'
+                padding: '0.25rem 0.75rem !important'
             },
             '#pnlSelection': {
                 height: '100%'
@@ -313,12 +324,78 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
                 opacity: .9
             },
             '&.disabled': {
-                opacity: 1
+                opacity: 1,
+                color: Theme.colors.primary.contrastText
             },
         }
     });
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts"], function (require, exports, components_4, assets_1, formSchema_1, index_1, data_json_1, eth_wallet_2, scom_token_list_2, index_css_1) {
+define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@scom/oswap-openswap-contract", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts"], function (require, exports, oswap_openswap_contract_1, scom_token_list_3, index_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
+    //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
+    exports.nullAddress = "0x0000000000000000000000000000000000000000";
+    const getAddressByKey = (state, key) => {
+        let Address = state.getAddresses();
+        return Address[key];
+    };
+    const mapTokenObjectSet = (state, obj) => {
+        var _a;
+        let chainId = state.getChainId();
+        const WETH9 = (0, index_1.getWETH)(chainId);
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                if (!((_a = obj[key]) === null || _a === void 0 ? void 0 : _a.address))
+                    obj[key] = WETH9;
+            }
+        }
+        return obj;
+    };
+    async function doCreatePair(wallet, restrictedFactory, tokenA, tokenB) {
+        const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, restrictedFactory);
+        const receipt = await factoryContract.createPair({ tokenA, tokenB });
+        return receipt;
+    }
+    exports.doCreatePair = doCreatePair;
+    async function isGroupQueueOracleSupported(state, tokenA, tokenB) {
+        const wallet = state.getRpcWallet();
+        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        let oracleAddress = await new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress).oracles({ param1: tokenA, param2: tokenB });
+        return oracleAddress != exports.nullAddress;
+    }
+    exports.isGroupQueueOracleSupported = isGroupQueueOracleSupported;
+    async function getGroupQueuePairs(state) {
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const nativeToken = scom_token_list_3.ChainNativeTokenByChainId[chainId];
+        const WETH9Address = getAddressByKey(state, 'WETH9');
+        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        let pairs = [];
+        const addPair = (token0Address, token1Address) => {
+            const token0 = token0Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token0Address.toLowerCase();
+            const token1 = token1Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token1Address.toLowerCase();
+            pairs.push({ fromToken: token0, toToken: token1 });
+            pairs.push({ fromToken: token1, toToken: token0 });
+        };
+        const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
+        let allPairsLength = (await factoryContract.allPairsLength()).toNumber();
+        let tasks = [];
+        for (let i = 0; i < allPairsLength; i++) {
+            tasks.push((async () => {
+                let pairAddress = await factoryContract.allPairs(i);
+                let groupPair = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
+                let token0Address = await groupPair.token0();
+                let token1Address = await groupPair.token1();
+                addPair(token0Address, token1Address);
+            })());
+        }
+        await Promise.all(tasks);
+        return pairs;
+    }
+    exports.getGroupQueuePairs = getGroupQueuePairs;
+});
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_2, scom_token_list_4, index_css_1, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
@@ -329,6 +406,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 wallets: [],
                 networks: []
             };
+            this._pairs = [];
             this.tag = {};
             this.initWallet = async () => {
                 try {
@@ -344,7 +422,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 setTimeout(async () => {
                     const chainId = this.chainId;
                     await this.initWallet();
-                    if (!(0, index_1.isClientWalletConnected)()) {
+                    if (!(0, index_2.isClientWalletConnected)()) {
                         this.btnCreate.caption = "Connect Wallet";
                     }
                     else if (!this.state.isRpcWalletConnected()) {
@@ -353,20 +431,27 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     else {
                         this.btnCreate.caption = "Create";
                     }
-                    const tokens = scom_token_list_2.tokenStore.getTokenList(chainId);
+                    if (this.state.isRpcWalletConnected()) {
+                        this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+                    }
+                    const tokens = scom_token_list_4.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
                     if (this.fromTokenInput.chainId !== chainId) {
                         this.fromTokenInput.chainId = chainId;
+                        this.fromTokenInput.token = null;
+                        this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
+                    }
+                    if (this.toTokenInput.chainId !== chainId) {
+                        this.toTokenInput.chainId = chainId;
+                        this.toTokenInput.token = null;
+                        this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
                     }
                 });
             };
         }
         get chainId() {
             return this.state.getChainId();
-        }
-        get rpcWallet() {
-            return this.state.getRpcWallet();
         }
         get defaultChainId() {
             return this._data.defaultChainId;
@@ -395,6 +480,12 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         set showHeader(value) {
             this._data.showHeader = value;
         }
+        get pairs() {
+            return this._pairs;
+        }
+        set pairs(value) {
+            this._pairs = value;
+        }
         removeRpcWalletEvents() {
             const rpcWallet = this.state.getRpcWallet();
             if (rpcWallet)
@@ -403,7 +494,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
-            this.state = new index_1.State(data_json_1.default);
+            this.state = new index_2.State(data_json_1.default);
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
                 const networks = this.getAttribute('networks', true);
@@ -516,8 +607,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
             const rpcWallet = this.state.getRpcWallet();
             const chainChangedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.ChainChanged, async (chainId) => {
+                this.refreshUI();
             });
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.Connected, async (connected) => {
+                this.refreshUI();
             });
             if (rpcWallet.instanceId) {
                 if (this.fromTokenInput)
@@ -538,6 +631,45 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         async refreshUI() {
             await this.initializeWidgetConfig();
         }
+        async onSelectToken(isFrom) {
+            this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
+            this.btnCreate.enabled = false;
+            if (!this.fromTokenInput.token || !this.toTokenInput.token)
+                return;
+            if (this.fromTokenInput.token === this.toTokenInput.token) {
+                if (isFrom) {
+                    this.toTokenInput.token = null;
+                }
+                else {
+                    this.fromTokenInput.token = null;
+                }
+                return;
+            }
+            const fromToken = (this.fromTokenInput.token.address || this.fromTokenInput.token.symbol).toLowerCase();
+            const toToken = (this.toTokenInput.token.address || this.toTokenInput.token.symbol).toLowerCase();
+            const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromToken && pair.toToken.toLowerCase() === toToken);
+            if (isPairExisted) {
+                this.pnlInfo.visible = true;
+                this.msgCreatePair.visible = true;
+                this.linkGov.visible = false;
+                this.msgCreatePair.caption = 'This pair is already created in the Group Queues.';
+            }
+            else {
+                this.fromTokenInput.tokenReadOnly = true;
+                this.toTokenInput.tokenReadOnly = true;
+                const WETH9 = (0, index_2.getWETH)(this.chainId);
+                const fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
+                const toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
+                const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, fromPairToken, toPairToken);
+                this.btnCreate.enabled = isSupported;
+                this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
+                if (!isSupported) {
+                    this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the oracle.';
+                }
+                this.fromTokenInput.tokenReadOnly = false;
+                this.toTokenInput.tokenReadOnly = false;
+            }
+        }
         render() {
             return (this.$render("i-scom-dapp-container", { id: "dappContainer" },
                 this.$render("i-panel", { background: { color: Theme.background.main } },
@@ -549,11 +681,14 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         this.$render("i-vstack", { width: "100%", height: "100%", padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, gap: "1.5rem" },
                             this.$render("i-label", { caption: "Create a new Pair", font: { size: '1.25rem', weight: 700, color: Theme.colors.primary.main } }),
                             this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
-                                this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
+                                this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: () => this.onSelectToken(true) }),
                                 this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
-                                this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } })),
+                                this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: () => this.onSelectToken(false) })),
+                            this.$render("i-vstack", { id: "pnlInfo", padding: { left: "3rem", right: "3rem" }, gap: "0.5rem", visible: false },
+                                this.$render("i-label", { id: "msgCreatePair", class: "text-center", visible: false }),
+                                this.$render("i-label", { id: "linkGov", class: "text-center", caption: " Go to Governance", visible: false, link: { href: 'https://www.openswap.xyz/#/governance', target: '_blank' } })),
                             this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", margin: { top: "0.5rem" } },
-                                this.$render("i-button", { id: "btnCreate", class: index_css_1.primaryButtonStyle, width: 150, caption: "Create" })))),
+                                this.$render("i-button", { id: "btnCreate", class: index_css_1.primaryButtonStyle, width: 150, caption: "Create", enabled: false })))),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
         }
