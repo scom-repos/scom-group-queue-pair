@@ -255,19 +255,41 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
     exports.primaryButtonStyle = exports.tokenInputStyle = void 0;
     const Theme = components_3.Styles.Theme.ThemeVars;
     exports.tokenInputStyle = components_3.Styles.style({
-        background: Theme.input.background,
+        width: 160,
         $nest: {
+            '> * > *': {
+                margin: '0 !important',
+                padding: '0 !important'
+            },
             '#gridTokenInput': {
+                height: 48,
+                padding: '0 !important',
                 transition: 'none'
             },
             '#btnToken': {
+                width: '100% !important',
                 fontSize: "1rem",
                 fontWeight: 700,
                 lineHeight: 1.5,
                 alignSelf: 'center',
+                justifyContent: 'space-between',
                 textAlign: 'center',
                 opacity: 1,
                 color: Theme.input.fontColor,
+                padding: '0.25rem 0.75rem'
+            },
+            '#pnlSelection': {
+                height: '100%'
+            },
+            '#pnlSelection > *': {
+                height: '100%'
+            },
+            '#mdCbToken': {
+                minWidth: '160px !important',
+                maxWidth: '160px !important',
+            },
+            '#mdCbToken .modal': {
+                minWidth: '160px !important'
             },
         }
     });
