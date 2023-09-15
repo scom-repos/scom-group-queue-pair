@@ -404,44 +404,46 @@ export default class ScomGroupQueuePair extends Module {
                                 />
                             </i-vstack>
                         </i-vstack>
-                        <i-vstack width="100%" height="100%" padding={{ top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }} gap="1.5rem">
-                            <i-label caption="Create a new Pair" font={{ size: '1.25rem', weight: 700, color: Theme.colors.primary.main }}></i-label>
-                            <i-hstack horizontalAlignment="center" verticalAlignment="center" wrap='wrap' gap={10}>
-                                <i-scom-token-input
-                                    id="fromTokenInput"
-                                    type="combobox"
-                                    class={tokenInputStyle}
-                                    isBalanceShown={false}
-                                    isBtnMaxShown={false}
-                                    isInputShown={false}
-                                    border={{ radius: 12 }}
-                                    onSelectToken={(token: ITokenObject) => this.onSelectToken(token, true)}
-                                ></i-scom-token-input>
-                                <i-label caption="to" font={{ size: "1rem" }}></i-label>
-                                <i-scom-token-input
-                                    id="toTokenInput"
-                                    type="combobox"
-                                    class={tokenInputStyle}
-                                    isBalanceShown={false}
-                                    isBtnMaxShown={false}
-                                    isInputShown={false}
-                                    border={{ radius: 12 }}
-                                    onSelectToken={(token: ITokenObject) => this.onSelectToken(token, false)}
-                                ></i-scom-token-input>
-                            </i-hstack>
-                            <i-vstack id="pnlInfo" padding={{ left: "3rem", right: "3rem" }} gap="0.5rem" visible={false}>
-                                <i-label id="msgCreatePair" class="text-center" visible={false} />
-                                <i-label
-                                    id="linkGov"
-                                    class="text-center"
-                                    caption=" Go to Governance"
-                                    visible={false}
-                                    link={{ href: 'https://www.openswap.xyz/#/governance', target: '_blank' }}
-                                ></i-label>
+                        <i-vstack width="100%" height="100%" padding={{ top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }}>
+                            <i-label caption="Create a new Pair" font={{ size: '1.25rem', weight: 700, color: Theme.colors.primary.main }} margin={{ bottom: '2rem' }}></i-label>
+                            <i-vstack width="100%" height="100%" maxWidth={360} horizontalAlignment="center" margin={{ left: 'auto', right: 'auto' }} gap="1.5rem">
+                                <i-hstack horizontalAlignment="center" verticalAlignment="center" wrap='wrap' gap={10}>
+                                    <i-scom-token-input
+                                        id="fromTokenInput"
+                                        type="combobox"
+                                        class={tokenInputStyle}
+                                        isBalanceShown={false}
+                                        isBtnMaxShown={false}
+                                        isInputShown={false}
+                                        border={{ radius: 12 }}
+                                        onSelectToken={(token: ITokenObject) => this.onSelectToken(token, true)}
+                                    ></i-scom-token-input>
+                                    <i-label caption="to" font={{ size: "1rem" }}></i-label>
+                                    <i-scom-token-input
+                                        id="toTokenInput"
+                                        type="combobox"
+                                        class={tokenInputStyle}
+                                        isBalanceShown={false}
+                                        isBtnMaxShown={false}
+                                        isInputShown={false}
+                                        border={{ radius: 12 }}
+                                        onSelectToken={(token: ITokenObject) => this.onSelectToken(token, false)}
+                                    ></i-scom-token-input>
+                                </i-hstack>
+                                <i-vstack id="pnlInfo" gap="0.5rem" visible={false}>
+                                    <i-label id="msgCreatePair" class="text-center" visible={false} />
+                                    <i-label
+                                        id="linkGov"
+                                        class="text-center"
+                                        caption=" Go to Governance"
+                                        visible={false}
+                                        link={{ href: 'https://www.openswap.xyz/#/governance', target: '_blank' }}
+                                    ></i-label>
+                                </i-vstack>
+                                <i-hstack horizontalAlignment="center" verticalAlignment="center" margin={{ top: "0.5rem" }}>
+                                    <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create" enabled={false} onClick={this.onCreatePair.bind(this)}></i-button>
+                                </i-hstack>
                             </i-vstack>
-                            <i-hstack horizontalAlignment="center" verticalAlignment="center" margin={{ top: "0.5rem" }}>
-                                <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create" enabled={false} onClick={this.onCreatePair.bind(this)}></i-button>
-                            </i-hstack>
                         </i-vstack>
                     </i-panel>
                     <i-scom-tx-status-modal id="txStatusModal" />
