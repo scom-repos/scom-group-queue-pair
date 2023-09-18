@@ -224,6 +224,21 @@ export default class ScomGroupQueuePair extends Module {
                 },
                 getTag: this.getTag.bind(this),
                 setTag: this.setTag.bind(this)
+            },
+            {
+                name: 'Embedder Configurator',
+                target: 'Embedders',
+                getData: async () => {
+                    return { ...this._data }
+                },
+                setData: async (properties: IGroupQueuePair, linkParams?: Record<string, any>) => {
+                    let resultingData = {
+                      ...properties
+                    };
+                    await this.setData(resultingData);
+                },
+                getTag: this.getTag.bind(this),
+                setTag: this.setTag.bind(this)
             }
         ]
     }

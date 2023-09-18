@@ -221,6 +221,20 @@ declare module "@scom/scom-group-queue-pair" {
             getTag: any;
             setTag: any;
             getProxySelectors?: undefined;
+        } | {
+            name: string;
+            target: string;
+            getData: () => Promise<{
+                wallets: IWalletPlugin[];
+                networks: INetworkConfig[];
+                defaultChainId?: number;
+                showHeader?: boolean;
+            }>;
+            setData: (properties: IGroupQueuePair, linkParams?: Record<string, any>) => Promise<void>;
+            getTag: any;
+            setTag: any;
+            getProxySelectors?: undefined;
+            getActions?: undefined;
         })[];
         private getData;
         private setData;

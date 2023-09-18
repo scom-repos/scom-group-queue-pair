@@ -646,6 +646,19 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     },
                     getTag: this.getTag.bind(this),
                     setTag: this.setTag.bind(this)
+                },
+                {
+                    name: 'Embedder Configurator',
+                    target: 'Embedders',
+                    getData: async () => {
+                        return Object.assign({}, this._data);
+                    },
+                    setData: async (properties, linkParams) => {
+                        let resultingData = Object.assign({}, properties);
+                        await this.setData(resultingData);
+                    },
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
                 }
             ];
         }
