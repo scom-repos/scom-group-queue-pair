@@ -654,7 +654,11 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         return Object.assign({}, this._data);
                     },
                     setData: async (properties, linkParams) => {
+                        var _a;
                         let resultingData = Object.assign({}, properties);
+                        if (!properties.defaultChainId && ((_a = properties.networks) === null || _a === void 0 ? void 0 : _a.length)) {
+                            resultingData.defaultChainId = properties.networks[0].chainId;
+                        }
                         await this.setData(resultingData);
                     },
                     getTag: this.getTag.bind(this),

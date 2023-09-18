@@ -235,6 +235,9 @@ export default class ScomGroupQueuePair extends Module {
                     let resultingData = {
                       ...properties
                     };
+                    if (!properties.defaultChainId && properties.networks?.length) {
+                        resultingData.defaultChainId = properties.networks[0].chainId;
+                    }
                     await this.setData(resultingData);
                 },
                 getTag: this.getTag.bind(this),
