@@ -12,7 +12,7 @@
     "declaration": false,
     "baseUrl": ".",
     "paths": {
-      "@scom-buyback/*": ["src/*"]
+      "@scom-group-queue-pair/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
