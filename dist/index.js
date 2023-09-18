@@ -525,6 +525,13 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             if (rpcWallet)
                 rpcWallet.unregisterAllWalletEvents();
         }
+        onHide() {
+            this.dappContainer.onHide();
+            this.removeRpcWalletEvents();
+        }
+        isEmptyData(value) {
+            return !value || !value.networks || value.networks.length === 0;
+        }
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
@@ -541,7 +548,9 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     defaultChainId,
                     showHeader
                 };
-                await this.setData(data);
+                if (!this.isEmptyData(data)) {
+                    await this.setData(data);
+                }
             }
             this.loadingElm.visible = false;
             this.isReadyCallbackQueued = false;

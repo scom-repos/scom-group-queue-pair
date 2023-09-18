@@ -155,7 +155,7 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
 /// <amd-module name="@scom/scom-group-queue-pair" />
 declare module "@scom/scom-group-queue-pair" {
     import { ControlElement, Module } from '@ijstech/components';
-    import { Pair } from "@scom/scom-group-queue-pair/interface.ts";
+    import { IGroupQueuePair, Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     interface ScomGroupQueuePairElement extends ControlElement {
@@ -201,6 +201,8 @@ declare module "@scom/scom-group-queue-pair" {
         get pairs(): Pair[];
         set pairs(value: Pair[]);
         removeRpcWalletEvents(): void;
+        onHide(): void;
+        isEmptyData(value: IGroupQueuePair): boolean;
         init(): Promise<void>;
         private _getActions;
         private getProjectOwnerActions;
