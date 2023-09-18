@@ -52,22 +52,12 @@ declare module "@scom/scom-group-queue-pair/formSchema.ts" {
             type: string;
             elements: {
                 type: string;
-                elements: {
-                    type: string;
-                    elements: {
+                scope: string;
+                options: {
+                    detail: {
                         type: string;
-                        label: string;
-                        elements: {
-                            type: string;
-                            scope: string;
-                            options: {
-                                detail: {
-                                    type: string;
-                                };
-                            };
-                        }[];
-                    }[];
-                }[];
+                    };
+                };
             }[];
         };
         customControls(): {

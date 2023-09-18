@@ -29,29 +29,13 @@ export default {
         type: 'VerticalLayout',
         elements: [
             {
-                type: 'HorizontalLayout',
-                elements: [
-                    {
-                        type: 'Categorization',
-                        elements: [
-                            {
-                                type: 'Category',
-                                label: 'Networks',
-                                elements: [
-                                    {
-                                        type: 'Control',
-                                        scope: '#/properties/networks',
-                                        options: {
-                                            detail: {
-                                                type: 'VerticalLayout'
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                    },
-                ]
+                type: 'Control',
+                scope: '#/properties/networks',
+                options: {
+                    detail: {
+                        type: 'VerticalLayout'
+                    }
+                }
             }
         ]
     },
