@@ -54,15 +54,18 @@ declare module "@scom/scom-group-queue-pair/formSchema.ts" {
                 type: string;
                 elements: {
                     type: string;
-                    label: string;
                     elements: {
                         type: string;
-                        scope: string;
-                        options: {
-                            detail: {
-                                type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            scope: string;
+                            options: {
+                                detail: {
+                                    type: string;
+                                };
                             };
-                        };
+                        }[];
                     }[];
                 }[];
             }[];
@@ -127,6 +130,17 @@ declare module "@scom/scom-group-queue-pair/data.json.ts" {
             explorerTxUrl: string;
             explorerAddressUrl: string;
         }[];
+        defaultBuilderData: {
+            defaultChainId: number;
+            networks: {
+                chainId: number;
+            }[];
+            wallets: {
+                name: string;
+            }[];
+            showHeader: boolean;
+            showFooter: boolean;
+        };
     };
     export default _default_2;
 }

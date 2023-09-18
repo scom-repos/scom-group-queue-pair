@@ -130,12 +130,46 @@ export default class ScomGroupQueuePair extends Module {
                 name: 'Edit',
                 icon: 'edit',
                 command: (builder: any, userInputData: any) => {
+                    let oldData: IGroupQueuePair = {
+                        wallets: [],
+                        networks: []
+                    };
+                    let oldTag = {};
+                    return {
+                        execute: () => {
+                            oldData = JSON.parse(JSON.stringify(this._data));
+                            const { networks } = userInputData;
+                            const themeSettings = {};
+                            this._data.networks = networks;
+                            this._data.defaultChainId = this._data.networks[0].chainId;
+                            this.resetRpcWallet();
+                            this.refreshUI();
+                            if (builder?.setData) builder.setData(this._data);
+
+                            oldTag = JSON.parse(JSON.stringify(this.tag));
+                            if (builder?.setTag) builder.setTag(themeSettings);
+                            else this.setTag(themeSettings);
+                            if (this.dappContainer) this.dappContainer.setTag(themeSettings);
+                        },
+                        undo: () => {
+                            this._data = JSON.parse(JSON.stringify(oldData));
+                            this.refreshUI();
+                            if (builder?.setData) builder.setData(this._data);
+              
+                            this.tag = JSON.parse(JSON.stringify(oldTag));
+                            if (builder?.setTag) builder.setTag(this.tag);
+                            else this.setTag(this.tag);
+                            if (this.dappContainer) this.dappContainer.setTag(this.tag);
+                        },
+                        redo: () => {}
+                    }
                 },
                 userInputDataSchema: formSchema.dataSchema,
                 userInputUISchema: formSchema.uiSchema,
                 customControls: formSchema.customControls()
             })
         }
+        return actions;
     }
 
     private getProjectOwnerActions() {
@@ -174,7 +208,8 @@ export default class ScomGroupQueuePair extends Module {
                 getActions: this._getActions.bind(this),
                 getData: this.getData.bind(this),
                 setData: async (data: any) => {
-                    await this.setData(data);
+                    const defaultData = configData.defaultBuilderData;
+                    await this.setData({ ...defaultData, ...data });
                 },
                 getTag: this.getTag.bind(this),
                 setTag: this.setTag.bind(this)

@@ -67,19 +67,24 @@ define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@sco
                     type: 'HorizontalLayout',
                     elements: [
                         {
-                            type: 'Category',
-                            label: 'Networks',
+                            type: 'Categorization',
                             elements: [
                                 {
-                                    type: 'Control',
-                                    scope: '#/properties/networks',
-                                    options: {
-                                        detail: {
-                                            type: 'VerticalLayout'
+                                    type: 'Category',
+                                    label: 'Networks',
+                                    elements: [
+                                        {
+                                            type: 'Control',
+                                            scope: '#/properties/networks',
+                                            options: {
+                                                detail: {
+                                                    type: 'VerticalLayout'
+                                                }
+                                            }
                                         }
-                                    }
+                                    ]
                                 }
-                            ]
+                            ],
                         },
                     ]
                 }
@@ -258,6 +263,24 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
                 "explorerAddressUrl": "https://testnet.snowtrace.io/address/"
             }
         ],
+        "defaultBuilderData": {
+            "defaultChainId": 43113,
+            "networks": [
+                {
+                    "chainId": 43113
+                },
+                {
+                    "chainId": 97
+                }
+            ],
+            "wallets": [
+                {
+                    "name": "metamask"
+                }
+            ],
+            "showHeader": true,
+            "showFooter": true
+        }
     };
 });
 define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
@@ -547,12 +570,52 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     name: 'Edit',
                     icon: 'edit',
                     command: (builder, userInputData) => {
+                        let oldData = {
+                            wallets: [],
+                            networks: []
+                        };
+                        let oldTag = {};
+                        return {
+                            execute: () => {
+                                oldData = JSON.parse(JSON.stringify(this._data));
+                                const { networks } = userInputData;
+                                const themeSettings = {};
+                                this._data.networks = networks;
+                                this._data.defaultChainId = this._data.networks[0].chainId;
+                                this.resetRpcWallet();
+                                this.refreshUI();
+                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                    builder.setData(this._data);
+                                oldTag = JSON.parse(JSON.stringify(this.tag));
+                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
+                                    builder.setTag(themeSettings);
+                                else
+                                    this.setTag(themeSettings);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(themeSettings);
+                            },
+                            undo: () => {
+                                this._data = JSON.parse(JSON.stringify(oldData));
+                                this.refreshUI();
+                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                    builder.setData(this._data);
+                                this.tag = JSON.parse(JSON.stringify(oldTag));
+                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
+                                    builder.setTag(this.tag);
+                                else
+                                    this.setTag(this.tag);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(this.tag);
+                            },
+                            redo: () => { }
+                        };
                     },
                     userInputDataSchema: formSchema_1.default.dataSchema,
                     userInputUISchema: formSchema_1.default.uiSchema,
                     customControls: formSchema_1.default.customControls()
                 });
             }
+            return actions;
         }
         getProjectOwnerActions() {
             const actions = [
@@ -589,7 +652,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     getActions: this._getActions.bind(this),
                     getData: this.getData.bind(this),
                     setData: async (data) => {
-                        await this.setData(data);
+                        const defaultData = data_json_1.default.defaultBuilderData;
+                        await this.setData(Object.assign(Object.assign({}, defaultData), data));
                     },
                     getTag: this.getTag.bind(this),
                     setTag: this.setTag.bind(this)

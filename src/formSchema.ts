@@ -32,19 +32,24 @@ export default {
                 type: 'HorizontalLayout',
                 elements: [
                     {
-                        type: 'Category',
-                        label: 'Networks',
+                        type: 'Categorization',
                         elements: [
                             {
-                                type: 'Control',
-                                scope: '#/properties/networks',
-                                options: {
-                                    detail: {
-                                        type: 'VerticalLayout'
+                                type: 'Category',
+                                label: 'Networks',
+                                elements: [
+                                    {
+                                        type: 'Control',
+                                        scope: '#/properties/networks',
+                                        options: {
+                                            detail: {
+                                                type: 'VerticalLayout'
+                                            }
+                                        }
                                     }
-                                }
+                                ]
                             }
-                        ]
+                        ],
                     },
                 ]
             }
