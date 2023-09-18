@@ -2,7 +2,7 @@ import { Module, customModule, Container, application, Styles } from '@ijstech/c
 import { getMulticallInfoList } from '@scom/scom-multicall';
 import { INetwork } from '@ijstech/eth-wallet';
 import getNetworkList from '@scom/scom-network-list';
-import ScomBuyback from '@scom/scom-group-queue-pair';
+import ScomGroupQueuePair from '@scom/scom-group-queue-pair';
 
 const Theme = Styles.Theme.defaultTheme;
 Theme.background.main = '#2c2626';
