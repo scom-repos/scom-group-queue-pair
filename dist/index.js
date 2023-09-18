@@ -102,15 +102,15 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
     exports.coreAddress = void 0;
     exports.coreAddress = {
         56: {
-            WETH9: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+            WrappedNativeToken: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
             OSWAP_RestrictedFactory: "0x91d137464b93caC7E2c2d4444a9D8609E4473B70",
         },
         97: {
-            WETH9: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
+            WrappedNativeToken: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
             OSWAP_RestrictedFactory: "0xa158FB71cA5EF59f707c6F8D0b9CC5765F97Fd60",
         },
         43113: {
-            WETH9: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+            WrappedNativeToken: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
             OSWAP_RestrictedFactory: "0x6C99c8E2c587706281a5B66bA7617DA7e2Ba6e48",
         },
     };
@@ -188,7 +188,7 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
             }
         }
         getAddresses(chainId) {
-            return core_1.coreAddress[chainId || this.getChainId()] || {};
+            return core_1.coreAddress[chainId || this.getChainId()];
         }
     }
     exports.State = State;
@@ -343,10 +343,6 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
     //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
-    const getAddressByKey = (state, key) => {
-        let Address = state.getAddresses();
-        return Address[key];
-    };
     async function doCreatePair(state, tokenA, tokenB) {
         let receipt = null;
         const wallet = eth_wallet_2.Wallet.getClientInstance();
@@ -361,7 +357,7 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
                 token0 = tokenB;
                 token1 = tokenA;
             }
-            let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+            let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
             const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
             receipt = await factoryContract.createPair({ tokenA: token0, tokenB: token1 });
         }
@@ -373,7 +369,7 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     exports.doCreatePair = doCreatePair;
     async function isGroupQueueOracleSupported(state, tokenA, tokenB) {
         const wallet = state.getRpcWallet();
-        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
         let oracleAddress = await new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress).oracles({ param1: tokenA, param2: tokenB });
         return oracleAddress != exports.nullAddress;
     }
@@ -382,8 +378,8 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         const wallet = state.getRpcWallet();
         const chainId = state.getChainId();
         const nativeToken = scom_token_list_3.ChainNativeTokenByChainId[chainId];
-        const WETH9Address = getAddressByKey(state, 'WETH9');
-        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        const WETH9Address = state.getAddresses().WrappedNativeToken;
+        let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
         let pairs = [];
         const addPair = (token0Address, token1Address) => {
             const token0 = token0Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token0Address.toLowerCase();

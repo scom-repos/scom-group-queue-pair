@@ -7,11 +7,6 @@ import { getWETH, State } from "./store/index";
 //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
 export const nullAddress = "0x0000000000000000000000000000000000000000";
 
-const getAddressByKey = (state: State, key: string) => {
-    let Address = state.getAddresses();
-    return Address[key];
-}
-
 export async function doCreatePair(state: State, tokenA: string, tokenB: string): Promise<{
     receipt: TransactionReceipt | null;
     error: Record<string, string> | null;
@@ -28,7 +23,7 @@ export async function doCreatePair(state: State, tokenA: string, tokenB: string)
             token0 = tokenB;
             token1 = tokenA;
         }
-        let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+        let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
         const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
         receipt = await factoryContract.createPair({ tokenA: token0, tokenB: token1 });
     } catch (error) {
@@ -39,7 +34,7 @@ export async function doCreatePair(state: State, tokenA: string, tokenB: string)
 
 export async function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string) {
     const wallet = state.getRpcWallet();
-    let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+    let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
     let oracleAddress = await new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress).oracles({ param1: tokenA, param2: tokenB });
     return oracleAddress != nullAddress;
 }
@@ -48,8 +43,8 @@ export async function getGroupQueuePairs(state: State) {
     const wallet = state.getRpcWallet();
     const chainId = state.getChainId();
     const nativeToken = ChainNativeTokenByChainId[chainId];
-    const WETH9Address = getAddressByKey(state, 'WETH9');
-    let factoryAddress = getAddressByKey(state, 'OSWAP_RestrictedFactory');
+    const WETH9Address = state.getAddresses().WrappedNativeToken;
+    let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
 
     let pairs: Pair[] = [];
 

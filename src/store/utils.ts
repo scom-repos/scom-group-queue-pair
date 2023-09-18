@@ -82,7 +82,7 @@ export class State {
   }
 
   getAddresses(chainId?: number) {
-    return coreAddress[chainId || this.getChainId()] || {};
+    return coreAddress[chainId || this.getChainId()];
   }
 }
 

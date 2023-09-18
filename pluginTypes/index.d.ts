@@ -73,12 +73,11 @@ declare module "@scom/scom-group-queue-pair/formSchema.ts" {
 /// <amd-module name="@scom/scom-group-queue-pair/store/core.ts" />
 declare module "@scom/scom-group-queue-pair/store/core.ts" {
     export interface CoreAddress {
+        WrappedNativeToken: string;
         OSWAP_RestrictedFactory: string;
     }
     export const coreAddress: {
-        [chainId: number]: {
-            [contract: string]: string;
-        };
+        [chainId: number]: CoreAddress;
     };
 }
 /// <amd-module name="@scom/scom-group-queue-pair/store/utils.ts" />
@@ -98,9 +97,7 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
         isRpcWalletConnected(): boolean;
         getChainId(): number;
         private setNetworkList;
-        getAddresses(chainId?: number): {
-            [contract: string]: string;
-        };
+        getAddresses(chainId?: number): import("@scom/scom-group-queue-pair/store/core.ts").CoreAddress;
     }
     export function isClientWalletConnected(): boolean;
     export const getWETH: (chainId: number) => ITokenObject;
