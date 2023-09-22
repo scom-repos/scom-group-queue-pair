@@ -38,7 +38,7 @@ define("@scom/scom-group-queue-pair/interface.ts", ["require", "exports"], funct
 define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@scom/scom-network-picker"], function (require, exports, scom_network_picker_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114];
+    const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114, 42161, 421613];
     const networks = chainIds.map(v => { return { chainId: v }; });
     exports.default = {
         dataSchema: {
@@ -109,10 +109,30 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
             WrappedNativeToken: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
             OSWAP_RestrictedFactory: "0xa158FB71cA5EF59f707c6F8D0b9CC5765F97Fd60",
         },
+        137: {
+            WrappedNativeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+            OSWAP_RestrictedFactory: "0xF879576c2D674C5D22f256083DC8fD019a3f33A1",
+        },
+        80001: {
+            WrappedNativeToken: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+            OSWAP_RestrictedFactory: "0x6D2b196aBf09CF97612a5c062bF14EC278F6D677",
+        },
         43113: {
             WrappedNativeToken: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
             OSWAP_RestrictedFactory: "0x6C99c8E2c587706281a5B66bA7617DA7e2Ba6e48",
         },
+        43114: {
+            WrappedNativeToken: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+            OSWAP_RestrictedFactory: "0x739f0BBcdAd415127FE8d5d6ED053e9D817BdAdb",
+        },
+        42161: {
+            WrappedNativeToken: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            OSWAP_RestrictedFactory: "0x408aAf94BD851eb991dA146dFc7C290aA42BA70f",
+        },
+        421613: {
+            WrappedNativeToken: "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f",
+            OSWAP_RestrictedFactory: "0x6f641f4F5948954F7cd675f3D874Ac60b193bA0d",
+        }
     };
 });
 define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, scom_token_list_1, core_1) {
