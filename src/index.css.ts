@@ -46,7 +46,8 @@ export const primaryButtonStyle = Styles.style({
     fontWeight: 600,
     lineHeight: 1.5,
     verticalAlign: 'middle',
-    color: Theme.colors.primary.contrastText,
+    background: Theme.background.gradient,
+    color: '#fff',
     borderRadius: '0.65rem',
     padding: '0.5rem 0.75rem',
     transition: 'background .3s ease',
@@ -62,7 +63,7 @@ export const primaryButtonStyle = Styles.style({
         },
         '&.disabled': {
             opacity: 1,
-            color: Theme.colors.primary.contrastText
+            color: '#fff',
         },
     }
 })

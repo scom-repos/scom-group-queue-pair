@@ -336,7 +336,8 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
         fontWeight: 600,
         lineHeight: 1.5,
         verticalAlign: 'middle',
-        color: Theme.colors.primary.contrastText,
+        background: Theme.background.gradient,
+        color: '#fff',
         borderRadius: '0.65rem',
         padding: '0.5rem 0.75rem',
         transition: 'background .3s ease',
@@ -352,7 +353,7 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
             },
             '&.disabled': {
                 opacity: 1,
-                color: Theme.colors.primary.contrastText
+                color: '#fff',
             },
         }
     });
