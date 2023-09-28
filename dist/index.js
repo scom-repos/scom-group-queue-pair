@@ -753,6 +753,12 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         async refreshUI() {
             await this.initializeWidgetConfig();
         }
+        onSelectFromToken(token) {
+            this.onSelectToken(token, true);
+        }
+        onSelectToToken(token) {
+            this.onSelectToken(token, false);
+        }
         async onSelectToken(token, isFrom) {
             var _a, _b, _c, _d, _e, _f, _g;
             const targetToken = (_a = (token.address || token.symbol)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
@@ -846,9 +852,9 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             this.$render("i-label", { caption: "Create a new Pair", font: { size: '1.25rem', weight: 700, color: Theme.colors.primary.main }, margin: { bottom: '2rem' } }),
                             this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: 360, horizontalAlignment: "center", margin: { left: 'auto', right: 'auto' }, gap: "1.5rem" },
                                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
-                                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: (token) => this.onSelectToken(token, true) }),
+                                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectFromToken.bind(this) }),
                                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
-                                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: (token) => this.onSelectToken(token, false) })),
+                                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
                                 this.$render("i-vstack", { id: "pnlInfo", gap: "0.5rem", visible: false },
                                     this.$render("i-label", { id: "msgCreatePair", class: "text-center", visible: false }),
                                     this.$render("i-label", { id: "linkGov", class: "text-center", caption: " Go to Governance", visible: false, link: { href: 'https://www.openswap.xyz/#/governance', target: '_blank' } })),

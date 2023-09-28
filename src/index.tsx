@@ -347,6 +347,14 @@ export default class ScomGroupQueuePair extends Module {
         })
     }
 
+    private onSelectFromToken(token: ITokenObject) {
+        this.onSelectToken(token, true);
+    }
+
+    private onSelectToToken(token: ITokenObject) {
+        this.onSelectToken(token, false);
+    }
+
     private async onSelectToken(token: ITokenObject, isFrom: boolean) {
         const targetToken = (token.address || token.symbol)?.toLowerCase();
         let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
@@ -480,7 +488,7 @@ export default class ScomGroupQueuePair extends Module {
                                         isBtnMaxShown={false}
                                         isInputShown={false}
                                         border={{ radius: 12 }}
-                                        onSelectToken={(token: ITokenObject) => this.onSelectToken(token, true)}
+                                        onSelectToken={this.onSelectFromToken.bind(this)}
                                     ></i-scom-token-input>
                                     <i-label caption="to" font={{ size: "1rem" }}></i-label>
                                     <i-scom-token-input
@@ -491,7 +499,7 @@ export default class ScomGroupQueuePair extends Module {
                                         isBtnMaxShown={false}
                                         isInputShown={false}
                                         border={{ radius: 12 }}
-                                        onSelectToken={(token: ITokenObject) => this.onSelectToken(token, false)}
+                                        onSelectToken={this.onSelectToToken.bind(this)}
                                     ></i-scom-token-input>
                                 </i-hstack>
                                 <i-vstack id="pnlInfo" gap="0.5rem" visible={false}>

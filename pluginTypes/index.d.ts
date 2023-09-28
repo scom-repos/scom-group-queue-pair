@@ -245,6 +245,8 @@ declare module "@scom/scom-group-queue-pair" {
         private refreshUI;
         private initWallet;
         private initializeWidgetConfig;
+        private onSelectFromToken;
+        private onSelectToToken;
         private onSelectToken;
         private showResultMessage;
         private connectWallet;
