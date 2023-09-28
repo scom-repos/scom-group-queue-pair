@@ -464,6 +464,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         this.btnCreate.caption = "Create";
                         this.btnCreate.enabled = false;
                     }
+                    this.fromTokenInput.chainId = chainId;
+                    this.toTokenInput.chainId = chainId;
                     const tokens = scom_token_list_4.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
@@ -734,12 +736,6 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_3.Constants.RpcWalletEvent.Connected, async (connected) => {
                 this.refreshUI();
             });
-            if (rpcWallet.instanceId) {
-                if (this.fromTokenInput)
-                    this.fromTokenInput.rpcWalletId = rpcWallet.instanceId;
-                if (this.toTokenInput)
-                    this.toTokenInput.rpcWalletId = rpcWallet.instanceId;
-            }
             const data = {
                 defaultChainId: this.defaultChainId,
                 wallets: this.wallets,

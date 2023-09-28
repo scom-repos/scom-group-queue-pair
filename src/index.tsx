@@ -296,10 +296,6 @@ export default class ScomGroupQueuePair extends Module {
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
             this.refreshUI();
         });
-        if (rpcWallet.instanceId) {
-            if (this.fromTokenInput) this.fromTokenInput.rpcWalletId = rpcWallet.instanceId;
-            if (this.toTokenInput) this.toTokenInput.rpcWalletId = rpcWallet.instanceId;
-        }
         const data: any = {
             defaultChainId: this.defaultChainId,
             wallets: this.wallets,
@@ -338,6 +334,8 @@ export default class ScomGroupQueuePair extends Module {
                 this.btnCreate.caption = "Create";
                 this.btnCreate.enabled = false;
             }
+            this.fromTokenInput.chainId = chainId;
+            this.toTokenInput.chainId = chainId;
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
