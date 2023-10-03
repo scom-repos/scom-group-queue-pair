@@ -787,6 +787,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.msgCreatePair.visible = true;
                 this.linkGov.visible = false;
                 this.msgCreatePair.caption = 'This pair is already created in the Group Queues.';
+                this.btnCreate.enabled = false;
             }
             else {
                 this.fromTokenInput.tokenReadOnly = true;
