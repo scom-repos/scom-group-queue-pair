@@ -535,7 +535,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.$render("i-label", { id: "lblConnectedStatus" }),
                     this.$render("i-hstack", null,
                         this.$render("i-button", { id: "btnConnectWallet", caption: 'Connect Wallet', font: { color: Theme.colors.primary.contrastText }, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, onClick: this.connectWallet }))),
-                this.$render("i-label", { caption: "Select Pair" }),
+                this.$render("i-label", { caption: "Select a Pair" }),
                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
                     this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),

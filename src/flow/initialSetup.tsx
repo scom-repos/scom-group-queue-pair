@@ -151,7 +151,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         ></i-button>
                     </i-hstack>
                 </i-vstack>
-                <i-label caption="Select Pair"></i-label>
+                <i-label caption="Select a Pair"></i-label>
                 <i-hstack horizontalAlignment="center" verticalAlignment="center" wrap='wrap' gap={10}>
                     <i-scom-token-input
                         id="fromTokenInput"
