@@ -19,6 +19,8 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         networks: INetworkConfig[];
         defaultChainId?: number;
         showHeader?: boolean;
+        fromToken?: string;
+        toToken?: string;
     }
     export type Pair = {
         fromToken: string;
@@ -272,6 +274,8 @@ declare module "@scom/scom-group-queue-pair" {
                 networks: INetworkConfig[];
                 defaultChainId?: number;
                 showHeader?: boolean;
+                fromToken?: string;
+                toToken?: string;
             }>;
             setData: (properties: IGroupQueuePair, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;
@@ -290,7 +294,7 @@ declare module "@scom/scom-group-queue-pair" {
         private initializeWidgetConfig;
         private onSelectFromToken;
         private onSelectToToken;
-        private onSelectToken;
+        private selectToken;
         private showResultMessage;
         private connectWallet;
         private onCreatePair;

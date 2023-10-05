@@ -11,6 +11,7 @@ import {
 } from "@ijstech/components";
 import { Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
 import ScomTokenInput from "@scom/scom-token-input";
+import { tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
 import { isClientWalletConnected, State } from "../store/index";
 
@@ -73,9 +74,13 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     }
     private async initializeWidgetConfig() {
         const connected = isClientWalletConnected();
+        this.updateConnectStatus(connected);
         await this.initWallet();
         this.fromTokenInput.chainId = this.chainId;
         this.toTokenInput.chainId = this.chainId;
+        const tokens = tokenStore.getTokenList(this.chainId);
+        this.fromTokenInput.tokenDataListProp = tokens;
+        this.toTokenInput.tokenDataListProp = tokens;
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
@@ -121,16 +126,21 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     }
     private handleClickStart = async () => {
         let eventName = `${this.invokerId}:nextStep`;
+        this.executionProperties.fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
+        this.executionProperties.toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
         this.$eventBus.dispatch(eventName, {
+            isInitialSetup: true,
+            tokenRequirements: this.tokenRequirements,
+            executionProperties: this.executionProperties
         });
     }
     render() {
         return (
             <i-vstack gap="1rem" padding={{ top: 10, bottom: 10, left: 20, right: 20 }}>
-                <i-label caption="Select Pair"></i-label>
+                <i-label caption="Get Ready to Create Pair"></i-label>
 
                 <i-vstack gap='1rem'>
-                    <i-label id="lbConnectedStatus"></i-label>
+                    <i-label id="lblConnectedStatus"></i-label>
                     <i-hstack>
                         <i-button
                             id="btnConnectWallet"
@@ -141,6 +151,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         ></i-button>
                     </i-hstack>
                 </i-vstack>
+                <i-label caption="Select Pair"></i-label>
                 <i-hstack horizontalAlignment="center" verticalAlignment="center" wrap='wrap' gap={10}>
                     <i-scom-token-input
                         id="fromTokenInput"

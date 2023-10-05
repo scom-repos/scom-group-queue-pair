@@ -340,21 +340,28 @@ export default class ScomGroupQueuePair extends Module {
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
+            if (this.state.flowInvokerId) {
+                if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
+                if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
+            }
             if (this.state.isRpcWalletConnected()) {
                 this.pairs = await getGroupQueuePairs(this.state);
+            }
+            if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+                this.selectToken(this.fromTokenInput.token, true);
             }
         })
     }
 
     private onSelectFromToken(token: ITokenObject) {
-        this.onSelectToken(token, true);
+        this.selectToken(token, true);
     }
 
     private onSelectToToken(token: ITokenObject) {
-        this.onSelectToken(token, false);
+        this.selectToken(token, false);
     }
 
-    private async onSelectToken(token: ITokenObject, isFrom: boolean) {
+    private async selectToken(token: ITokenObject, isFrom: boolean) {
         const targetToken = (token.address || token.symbol)?.toLowerCase();
         let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
         let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();

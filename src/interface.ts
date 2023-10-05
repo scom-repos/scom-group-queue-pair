@@ -6,6 +6,8 @@ export interface IGroupQueuePair {
     networks: INetworkConfig[];
     defaultChainId?: number;
     showHeader?: boolean;
+    fromToken?: string;
+    toToken?: string;
 }
 
 export type Pair = {

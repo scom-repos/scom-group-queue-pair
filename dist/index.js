@@ -428,7 +428,7 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     }
     exports.getGroupQueuePairs = getGroupQueuePairs;
 });
-define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-group-queue-pair/store/index.ts"], function (require, exports, components_4, eth_wallet_3, index_1) {
+define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
@@ -437,8 +437,15 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             super(parent, options);
             this.walletEvents = [];
             this.handleClickStart = async () => {
+                var _a, _b, _c, _d;
                 let eventName = `${this.invokerId}:nextStep`;
-                this.$eventBus.dispatch(eventName, {});
+                this.executionProperties.fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
+                this.executionProperties.toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
+                this.$eventBus.dispatch(eventName, {
+                    isInitialSetup: true,
+                    tokenRequirements: this.tokenRequirements,
+                    executionProperties: this.executionProperties
+                });
             };
             this.state = new index_1.State({});
             this.$eventBus = components_4.application.EventBus;
@@ -470,9 +477,13 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
         async initializeWidgetConfig() {
             const connected = (0, index_1.isClientWalletConnected)();
+            this.updateConnectStatus(connected);
             await this.initWallet();
             this.fromTokenInput.chainId = this.chainId;
             this.toTokenInput.chainId = this.chainId;
+            const tokens = scom_token_list_4.tokenStore.getTokenList(this.chainId);
+            this.fromTokenInput.tokenDataListProp = tokens;
+            this.toTokenInput.tokenDataListProp = tokens;
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -519,11 +530,12 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
         render() {
             return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
-                this.$render("i-label", { caption: "Select Pair" }),
+                this.$render("i-label", { caption: "Get Ready to Create Pair" }),
                 this.$render("i-vstack", { gap: '1rem' },
-                    this.$render("i-label", { id: "lbConnectedStatus" }),
+                    this.$render("i-label", { id: "lblConnectedStatus" }),
                     this.$render("i-hstack", null,
                         this.$render("i-button", { id: "btnConnectWallet", caption: 'Connect Wallet', font: { color: Theme.colors.primary.contrastText }, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, onClick: this.connectWallet }))),
+                this.$render("i-label", { caption: "Select Pair" }),
                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
                     this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
@@ -538,7 +550,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
     ], ScomGroupQueuePairFlowInitialSetup);
     exports.default = ScomGroupQueuePairFlowInitialSetup;
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_4, index_css_1, api_1, initialSetup_1) {
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, index_css_1, api_1, initialSetup_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_5.Styles.Theme.ThemeVars;
@@ -579,11 +591,20 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     }
                     this.fromTokenInput.chainId = chainId;
                     this.toTokenInput.chainId = chainId;
-                    const tokens = scom_token_list_4.tokenStore.getTokenList(chainId);
+                    const tokens = scom_token_list_5.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
+                    if (this.state.flowInvokerId) {
+                        if (this._data.fromToken)
+                            this.fromTokenInput.address = this._data.fromToken;
+                        if (this._data.toToken)
+                            this.toTokenInput.address = this._data.toToken;
+                    }
                     if (this.state.isRpcWalletConnected()) {
                         this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+                    }
+                    if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+                        this.selectToken(this.fromTokenInput.token, true);
                     }
                 });
             };
@@ -863,12 +884,12 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             await this.initializeWidgetConfig();
         }
         onSelectFromToken(token) {
-            this.onSelectToken(token, true);
+            this.selectToken(token, true);
         }
         onSelectToToken(token) {
-            this.onSelectToken(token, false);
+            this.selectToken(token, false);
         }
-        async onSelectToken(token, isFrom) {
+        async selectToken(token, isFrom) {
             var _a, _b, _c, _d, _e, _f, _g;
             const targetToken = (_a = (token.address || token.symbol)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
             let fromToken = (_d = (((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.address) || ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.symbol))) === null || _d === void 0 ? void 0 : _d.toLowerCase();
