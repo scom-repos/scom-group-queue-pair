@@ -230,6 +230,7 @@ declare module "@scom/scom-group-queue-pair" {
         private _pairs;
         private fromPairToken;
         private toPairToken;
+        private isReadyToCreate;
         tag: any;
         private get chainId();
         get defaultChainId(): number;

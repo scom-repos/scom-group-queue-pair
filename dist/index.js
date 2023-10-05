@@ -561,7 +561,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 wallets: [],
                 networks: []
             };
-            this._pairs = [];
+            this.isReadyToCreate = false;
             this.tag = {};
             this.initWallet = async () => {
                 try {
@@ -587,7 +587,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     }
                     else {
                         this.btnCreate.caption = "Create";
-                        this.btnCreate.enabled = false;
+                        this.btnCreate.enabled = this.isReadyToCreate;
                     }
                     this.fromTokenInput.chainId = chainId;
                     this.toTokenInput.chainId = chainId;
@@ -600,11 +600,12 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         if (this._data.toToken)
                             this.toTokenInput.address = this._data.toToken;
                     }
-                    if (this.state.isRpcWalletConnected()) {
+                    if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
+                        this.fromTokenInput.tokenReadOnly = true;
+                        this.toTokenInput.tokenReadOnly = true;
                         this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
-                    }
-                    if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
-                        this.selectToken(this.fromTokenInput.token, true);
+                        this.fromTokenInput.tokenReadOnly = false;
+                        this.toTokenInput.tokenReadOnly = false;
                     }
                 });
             };
@@ -865,6 +866,11 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.toTokenInput.token = null;
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
                 this.fromPairToken = this.toPairToken = "";
+                this.fromTokenInput.tokenReadOnly = true;
+                this.toTokenInput.tokenReadOnly = true;
+                this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+                this.fromTokenInput.tokenReadOnly = false;
+                this.toTokenInput.tokenReadOnly = false;
                 this.refreshUI();
             });
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_4.Constants.RpcWalletEvent.Connected, async (connected) => {
@@ -891,6 +897,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
         async selectToken(token, isFrom) {
             var _a, _b, _c, _d, _e, _f, _g;
+            this.isReadyToCreate = false;
             const targetToken = (_a = (token.address || token.symbol)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
             let fromToken = (_d = (((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.address) || ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.symbol))) === null || _d === void 0 ? void 0 : _d.toLowerCase();
             let toToken = (_g = (((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.address) || ((_f = this.toTokenInput.token) === null || _f === void 0 ? void 0 : _f.symbol))) === null || _g === void 0 ? void 0 : _g.toLowerCase();
@@ -912,7 +919,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.toPairToken = toToken;
             if (!this.fromTokenInput.token || !this.toTokenInput.token) {
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
-                this.btnCreate.enabled = false;
+                this.isReadyToCreate = false;
                 return;
             }
             const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
@@ -921,7 +928,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.msgCreatePair.visible = true;
                 this.linkGov.visible = false;
                 this.msgCreatePair.caption = 'This pair is already created in the Group Queues.';
-                this.btnCreate.enabled = false;
+                this.isReadyToCreate = false;
             }
             else {
                 this.fromTokenInput.tokenReadOnly = true;
@@ -930,13 +937,16 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
                 this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
                 const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromPairToken, this.toPairToken);
-                this.btnCreate.enabled = isSupported;
+                this.isReadyToCreate = isSupported;
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
                 if (!isSupported) {
                     this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the oracle.';
                 }
                 this.fromTokenInput.tokenReadOnly = false;
                 this.toTokenInput.tokenReadOnly = false;
+            }
+            if ((0, index_2.isClientWalletConnected)() && this.state.isRpcWalletConnected()) {
+                this.btnCreate.enabled = this.isReadyToCreate;
             }
         }
         async onCreatePair() {

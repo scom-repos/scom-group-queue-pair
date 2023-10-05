@@ -50,9 +50,10 @@ export default class ScomGroupQueuePair extends Module {
         wallets: [],
         networks: []
     };
-    private _pairs: Pair[] = [];
+    private _pairs: Pair[];
     private fromPairToken: string;
     private toPairToken: string;
+    private isReadyToCreate: boolean = false;
     tag: any = {};
 
     private get chainId() {
@@ -292,6 +293,11 @@ export default class ScomGroupQueuePair extends Module {
             this.toTokenInput.token = null;
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
             this.fromPairToken = this.toPairToken = "";
+            this.fromTokenInput.tokenReadOnly = true;
+            this.toTokenInput.tokenReadOnly = true;
+            this.pairs = await getGroupQueuePairs(this.state);
+            this.fromTokenInput.tokenReadOnly = false;
+            this.toTokenInput.tokenReadOnly = false;
             this.refreshUI();
         });
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
@@ -333,7 +339,7 @@ export default class ScomGroupQueuePair extends Module {
                 this.btnCreate.enabled = true;
             } else {
                 this.btnCreate.caption = "Create";
-                this.btnCreate.enabled = false;
+                this.btnCreate.enabled = this.isReadyToCreate;
             }
             this.fromTokenInput.chainId = chainId;
             this.toTokenInput.chainId = chainId;
@@ -344,11 +350,12 @@ export default class ScomGroupQueuePair extends Module {
                 if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
                 if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
             }
-            if (this.state.isRpcWalletConnected()) {
+            if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
+                this.fromTokenInput.tokenReadOnly = true;
+                this.toTokenInput.tokenReadOnly = true;
                 this.pairs = await getGroupQueuePairs(this.state);
-            }
-            if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
-                this.selectToken(this.fromTokenInput.token, true);
+                this.fromTokenInput.tokenReadOnly = false;
+                this.toTokenInput.tokenReadOnly = false;
             }
         })
     }
@@ -362,6 +369,7 @@ export default class ScomGroupQueuePair extends Module {
     }
 
     private async selectToken(token: ITokenObject, isFrom: boolean) {
+        this.isReadyToCreate = false;
         const targetToken = (token.address || token.symbol)?.toLowerCase();
         let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
         let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
@@ -380,7 +388,7 @@ export default class ScomGroupQueuePair extends Module {
         this.toPairToken = toToken;
         if (!this.fromTokenInput.token || !this.toTokenInput.token) {
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
-            this.btnCreate.enabled = false;
+            this.isReadyToCreate = false;
             return;
         }
         const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
@@ -389,7 +397,7 @@ export default class ScomGroupQueuePair extends Module {
             this.msgCreatePair.visible = true;
             this.linkGov.visible = false;
             this.msgCreatePair.caption = 'This pair is already created in the Group Queues.';
-            this.btnCreate.enabled = false;
+            this.isReadyToCreate = false;
         } else {
             this.fromTokenInput.tokenReadOnly = true;
             this.toTokenInput.tokenReadOnly = true;
@@ -397,13 +405,16 @@ export default class ScomGroupQueuePair extends Module {
             this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
             this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
             const isSupported = await isGroupQueueOracleSupported(this.state, this.fromPairToken, this.toPairToken);
-            this.btnCreate.enabled = isSupported;
+            this.isReadyToCreate = isSupported;
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
             if (!isSupported) {
                 this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the oracle.';
             }
             this.fromTokenInput.tokenReadOnly = false;
             this.toTokenInput.tokenReadOnly = false;
+        }
+        if (isClientWalletConnected() && this.state.isRpcWalletConnected()) {
+            this.btnCreate.enabled = this.isReadyToCreate;
         }
     }
 
