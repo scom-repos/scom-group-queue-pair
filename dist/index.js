@@ -965,13 +965,31 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.toTokenInput.tokenReadOnly = true;
                 this.btnCreate.rightIcon.spin = true;
                 this.btnCreate.rightIcon.visible = true;
-                const { error } = await (0, api_1.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
+                const { receipt, error } = await (0, api_1.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
                 }
                 else {
                     this.fromPairToken = '';
                     this.toPairToken = '';
+                }
+                if (receipt) {
+                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const transactionsInfoArr = [
+                        {
+                            desc: `Create Pair ${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`,
+                            fromToken: null,
+                            toToken: null,
+                            fromTokenAmount: '',
+                            toTokenAmount: '-',
+                            hash: receipt.transactionHash,
+                            timestamp
+                        }
+                    ];
+                    const eventName = `${this.state.flowInvokerId}:addTransactions`;
+                    components_5.application.EventBus.dispatch(eventName, {
+                        list: transactionsInfoArr
+                    });
                 }
             }
             catch (error) {

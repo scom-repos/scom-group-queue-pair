@@ -463,12 +463,30 @@ export default class ScomGroupQueuePair extends Module {
             this.btnCreate.rightIcon.spin = true;
             this.btnCreate.rightIcon.visible = true;
 
-            const { error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
+            const { receipt, error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
             if (error) {
                 this.showResultMessage('error', error as any);
             } else {
                 this.fromPairToken = '';
                 this.toPairToken = '';
+            }
+            if (receipt) {
+                const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                const transactionsInfoArr = [
+                    {
+                        desc: `Create Pair ${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`,
+                        fromToken: null,
+                        toToken: null,
+                        fromTokenAmount: '',
+                        toTokenAmount: '-',
+                        hash: receipt.transactionHash,
+                        timestamp
+                    }
+                ];
+                const eventName = `${this.state.flowInvokerId}:addTransactions`;
+                application.EventBus.dispatch(eventName, {
+                    list: transactionsInfoArr
+                });
             }
         } catch (error) {
             console.error(error);
