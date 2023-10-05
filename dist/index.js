@@ -155,6 +155,9 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
                 this.setNetworkList(options.networks, options.infuraId);
             }
         }
+        setFlowInvokerId(id) {
+            this.flowInvokerId = id;
+        }
         initRpcWallet(defaultChainId) {
             var _a, _b, _c;
             if (this.rpcWalletId) {
@@ -425,11 +428,121 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     }
     exports.getGroupQueuePairs = getGroupQueuePairs;
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, assets_1, formSchema_1, index_1, data_json_1, eth_wallet_3, scom_token_list_4, index_css_1, api_1) {
+define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-group-queue-pair/store/index.ts"], function (require, exports, components_4, eth_wallet_3, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_4.Module {
+    let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_4.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this.walletEvents = [];
+            this.handleClickStart = async () => {
+                let eventName = `${this.invokerId}:nextStep`;
+                this.$eventBus.dispatch(eventName, {});
+            };
+            this.state = new index_1.State({});
+            this.$eventBus = components_4.application.EventBus;
+        }
+        get rpcWallet() {
+            return this.state.getRpcWallet();
+        }
+        get chainId() {
+            return this.executionProperties.chainId || this.executionProperties.defaultChainId;
+        }
+        async resetRpcWallet() {
+            await this.state.initRpcWallet(this.chainId);
+        }
+        async setData(value) {
+            this.executionProperties = value.executionProperties;
+            this.tokenRequirements = value.tokenRequirements;
+            this.invokerId = value.invokerId;
+            await this.resetRpcWallet();
+            await this.initializeWidgetConfig();
+        }
+        async initWallet() {
+            try {
+                const rpcWallet = this.rpcWallet;
+                await rpcWallet.init();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        }
+        async initializeWidgetConfig() {
+            const connected = (0, index_1.isClientWalletConnected)();
+            await this.initWallet();
+            this.fromTokenInput.chainId = this.chainId;
+            this.toTokenInput.chainId = this.chainId;
+        }
+        async connectWallet() {
+            if (!(0, index_1.isClientWalletConnected)()) {
+                if (this.mdWallet) {
+                    await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
+                    this.mdWallet.networks = this.executionProperties.networks;
+                    this.mdWallet.wallets = this.executionProperties.wallets;
+                    this.mdWallet.showModal();
+                }
+            }
+        }
+        updateConnectStatus(connected) {
+            if (connected) {
+                this.lblConnectedStatus.caption = 'Connected with ' + eth_wallet_3.Wallet.getClientInstance().address;
+                this.btnConnectWallet.visible = false;
+            }
+            else {
+                this.lblConnectedStatus.caption = 'Please connect your wallet first';
+                this.btnConnectWallet.visible = true;
+            }
+        }
+        registerEvents() {
+            let clientWallet = eth_wallet_3.Wallet.getClientInstance();
+            this.walletEvents.push(clientWallet.registerWalletEvent(this, eth_wallet_3.Constants.ClientWalletEvent.AccountsChanged, async (payload) => {
+                const { account } = payload;
+                let connected = !!account;
+                this.updateConnectStatus(connected);
+            }));
+        }
+        onHide() {
+            let clientWallet = eth_wallet_3.Wallet.getClientInstance();
+            for (let event of this.walletEvents) {
+                clientWallet.unregisterWalletEvent(event);
+            }
+            this.walletEvents = [];
+        }
+        init() {
+            super.init();
+            this.fromTokenInput.style.setProperty('--input-background', '#232B5A');
+            this.fromTokenInput.style.setProperty('--input-font_color', '#fff');
+            this.toTokenInput.style.setProperty('--input-background', '#232B5A');
+            this.toTokenInput.style.setProperty('--input-font_color', '#fff');
+            this.registerEvents();
+        }
+        render() {
+            return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
+                this.$render("i-label", { caption: "Select Pair" }),
+                this.$render("i-vstack", { gap: '1rem' },
+                    this.$render("i-label", { id: "lbConnectedStatus" }),
+                    this.$render("i-hstack", null,
+                        this.$render("i-button", { id: "btnConnectWallet", caption: 'Connect Wallet', font: { color: Theme.colors.primary.contrastText }, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, onClick: this.connectWallet }))),
+                this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
+                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
+                    this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
+                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } })),
+                this.$render("i-hstack", { horizontalAlignment: 'center' },
+                    this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart })),
+                this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
+        }
+    };
+    ScomGroupQueuePairFlowInitialSetup = __decorate([
+        (0, components_4.customElements)('i-scom-group-queue-pair-flow-initial-setup')
+    ], ScomGroupQueuePairFlowInitialSetup);
+    exports.default = ScomGroupQueuePairFlowInitialSetup;
+});
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_4, index_css_1, api_1, initialSetup_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_5.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_5.Module {
         constructor() {
             super(...arguments);
             this._data = {
@@ -440,7 +553,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.tag = {};
             this.initWallet = async () => {
                 try {
-                    await eth_wallet_3.Wallet.getClientInstance().init();
+                    await eth_wallet_4.Wallet.getClientInstance().init();
                     const rpcWallet = this.state.getRpcWallet();
                     await rpcWallet.init();
                 }
@@ -452,7 +565,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 setTimeout(async () => {
                     const chainId = this.chainId;
                     await this.initWallet();
-                    if (!(0, index_1.isClientWalletConnected)()) {
+                    if (!(0, index_2.isClientWalletConnected)()) {
                         this.btnCreate.caption = "Connect Wallet";
                         this.btnCreate.enabled = true;
                     }
@@ -488,9 +601,9 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.txStatusModal.showModal();
             };
             this.connectWallet = async () => {
-                if (!(0, index_1.isClientWalletConnected)()) {
+                if (!(0, index_2.isClientWalletConnected)()) {
                     if (this.mdWallet) {
-                        await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
+                        await components_5.application.loadPackage('@scom/scom-wallet-modal', '*');
                         this.mdWallet.networks = this.networks;
                         this.mdWallet.wallets = this.wallets;
                         this.mdWallet.showModal();
@@ -498,7 +611,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     return;
                 }
                 if (!this.state.isRpcWalletConnected()) {
-                    const clientWallet = eth_wallet_3.Wallet.getClientInstance();
+                    const clientWallet = eth_wallet_4.Wallet.getClientInstance();
                     await clientWallet.switchNetwork(this.chainId);
                 }
             };
@@ -554,7 +667,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
-            this.state = new index_1.State(data_json_1.default);
+            this.state = new index_2.State(data_json_1.default);
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
                 const networks = this.getAttribute('networks', true);
@@ -726,14 +839,14 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.removeRpcWalletEvents();
             const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
             const rpcWallet = this.state.getRpcWallet();
-            const chainChangedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_3.Constants.RpcWalletEvent.ChainChanged, async (chainId) => {
+            const chainChangedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_4.Constants.RpcWalletEvent.ChainChanged, async (chainId) => {
                 this.fromTokenInput.token = null;
                 this.toTokenInput.token = null;
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = false;
                 this.fromPairToken = this.toPairToken = "";
                 this.refreshUI();
             });
-            const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_3.Constants.RpcWalletEvent.Connected, async (connected) => {
+            const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_4.Constants.RpcWalletEvent.Connected, async (connected) => {
                 this.refreshUI();
             });
             const data = {
@@ -792,7 +905,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             else {
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
-                const WETH9 = (0, index_1.getWETH)(this.chainId);
+                const WETH9 = (0, index_2.getWETH)(this.chainId);
                 this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
                 this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
                 const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromPairToken, this.toPairToken);
@@ -860,9 +973,39 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
         }
+        async handleFlowStage(target, stage, options) {
+            let widget;
+            if (stage === 'initialSetup') {
+                widget = new initialSetup_1.default();
+                target.appendChild(widget);
+                await widget.ready();
+                let properties = options.properties;
+                let tokenRequirements = options.tokenRequirements;
+                let invokerId = options.invokerId;
+                await widget.setData({
+                    executionProperties: properties,
+                    tokenRequirements,
+                    invokerId
+                });
+            }
+            else {
+                widget = this;
+                target.appendChild(widget);
+                await widget.ready();
+                let properties = options.properties;
+                let tag = options.tag;
+                let invokerId = options.invokerId;
+                this.state.setFlowInvokerId(invokerId);
+                await this.setData(properties);
+                if (tag) {
+                    this.setTag(tag);
+                }
+            }
+            return { widget };
+        }
     };
     ScomGroupQueuePair = __decorate([
-        (0, components_4.customElements)('i-scom-group-queue-pair')
+        (0, components_5.customElements)('i-scom-group-queue-pair')
     ], ScomGroupQueuePair);
     exports.default = ScomGroupQueuePair;
 });

@@ -90,8 +90,10 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
             [key: number]: INetwork;
         };
         rpcWalletId: string;
+        flowInvokerId: string;
         constructor(options: any);
         private initData;
+        setFlowInvokerId(id: string): void;
         initRpcWallet(defaultChainId: number): string;
         getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
         isRpcWalletConnected(): boolean;
@@ -149,9 +151,50 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
     export function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string): Promise<boolean>;
     export function getGroupQueuePairs(state: State): Promise<Pair[]>;
 }
+/// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
+declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
+    import { Container, ControlElement, Module } from "@ijstech/components";
+    interface ScomGroupQueuePairFlowInitialSetupElement extends ControlElement {
+        data?: any;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-group-queue-pair-flow-initial-setup']: ScomGroupQueuePairFlowInitialSetupElement;
+            }
+        }
+    }
+    export default class ScomGroupQueuePairFlowInitialSetup extends Module {
+        private lblConnectedStatus;
+        private btnConnectWallet;
+        private fromTokenInput;
+        private toTokenInput;
+        private mdWallet;
+        private state;
+        private tokenRequirements;
+        private executionProperties;
+        private invokerId;
+        private $eventBus;
+        private walletEvents;
+        constructor(parent?: Container, options?: ControlElement);
+        private get rpcWallet();
+        private get chainId();
+        private resetRpcWallet;
+        setData(value: any): Promise<void>;
+        private initWallet;
+        private initializeWidgetConfig;
+        connectWallet(): Promise<void>;
+        private updateConnectStatus;
+        private registerEvents;
+        onHide(): void;
+        init(): void;
+        private handleClickStart;
+        render(): any;
+    }
+}
 /// <amd-module name="@scom/scom-group-queue-pair" />
 declare module "@scom/scom-group-queue-pair" {
-    import { ControlElement, Module } from '@ijstech/components';
+    import { Control, ControlElement, Module } from '@ijstech/components';
     import { IGroupQueuePair, Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
@@ -252,5 +295,8 @@ declare module "@scom/scom-group-queue-pair" {
         private connectWallet;
         private onCreatePair;
         render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: any;
+        }>;
     }
 }
