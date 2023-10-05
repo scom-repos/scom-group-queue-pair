@@ -607,6 +607,9 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         this.fromTokenInput.tokenReadOnly = false;
                         this.toTokenInput.tokenReadOnly = false;
                     }
+                    if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+                        this.selectToken(this.fromTokenInput.token, true);
+                    }
                 });
             };
             this.showResultMessage = (status, content) => {

@@ -357,6 +357,9 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromTokenInput.tokenReadOnly = false;
                 this.toTokenInput.tokenReadOnly = false;
             }
+            if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+                this.selectToken(this.fromTokenInput.token, true);
+            }
         })
     }
 
