@@ -471,7 +471,7 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromPairToken = '';
                 this.toPairToken = '';
             }
-            if (receipt) {
+            if (this.state.flowInvokerId && receipt) {
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                 const transactionsInfoArr = [
                     {
