@@ -462,6 +462,7 @@ export default class ScomGroupQueuePair extends Module {
             this.toTokenInput.tokenReadOnly = true;
             this.btnCreate.rightIcon.spin = true;
             this.btnCreate.rightIcon.visible = true;
+            const chainId = this.chainId;
 
             const { receipt, error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
             if (error) {
@@ -475,6 +476,7 @@ export default class ScomGroupQueuePair extends Module {
                 const transactionsInfoArr = [
                     {
                         desc: `Create Pair ${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`,
+                        chainId: chainId,
                         fromToken: null,
                         toToken: null,
                         fromTokenAmount: '',

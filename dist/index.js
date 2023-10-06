@@ -965,6 +965,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.toTokenInput.tokenReadOnly = true;
                 this.btnCreate.rightIcon.spin = true;
                 this.btnCreate.rightIcon.visible = true;
+                const chainId = this.chainId;
                 const { receipt, error } = await (0, api_1.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
@@ -978,6 +979,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     const transactionsInfoArr = [
                         {
                             desc: `Create Pair ${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`,
+                            chainId: chainId,
                             fromToken: null,
                             toToken: null,
                             fromTokenAmount: '',
