@@ -8,7 +8,8 @@ export class State {
   infuraId: string = '';
   networkMap: { [key: number]: INetwork } = {};
   rpcWalletId: string = '';
-  flowInvokerId: string;
+  handleNextFlowStep: (data: any) => Promise<void>;
+  handleAddTransactions: (data: any) => Promise<void>;
 
   constructor(options: any) {
     this.networkMap = getNetworkList();
@@ -22,10 +23,6 @@ export class State {
     if (options.networks) {
       this.setNetworkList(options.networks, options.infuraId)
     }
-  }
-
-  setFlowInvokerId(id: string) {
-    this.flowInvokerId = id;
   }
 
   initRpcWallet(defaultChainId: number) {

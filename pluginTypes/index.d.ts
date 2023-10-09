@@ -1,5 +1,7 @@
 /// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <amd-module name="@scom/scom-group-queue-pair/assets.ts" />
 declare module "@scom/scom-group-queue-pair/assets.ts" {
     function fullPath(path: string): string;
@@ -90,10 +92,10 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
             [key: number]: INetwork;
         };
         rpcWalletId: string;
-        flowInvokerId: string;
+        handleNextFlowStep: (data: any) => Promise<void>;
+        handleAddTransactions: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
-        setFlowInvokerId(id: string): void;
         initRpcWallet(defaultChainId: number): string;
         getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
         isRpcWalletConnected(): boolean;
@@ -153,7 +155,8 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
-    import { Container, ControlElement, Module } from "@ijstech/components";
+    import { ControlElement, Module } from "@ijstech/components";
+    import { State } from "@scom/scom-group-queue-pair/store/index.ts";
     interface ScomGroupQueuePairFlowInitialSetupElement extends ControlElement {
         data?: any;
     }
@@ -170,13 +173,12 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private fromTokenInput;
         private toTokenInput;
         private mdWallet;
-        private state;
+        private _state;
         private tokenRequirements;
         private executionProperties;
-        private invokerId;
-        private $eventBus;
         private walletEvents;
-        constructor(parent?: Container, options?: ControlElement);
+        get state(): State;
+        set state(value: State);
         private get rpcWallet();
         private get chainId();
         private resetRpcWallet;
@@ -194,7 +196,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair" />
 declare module "@scom/scom-group-queue-pair" {
-    import { Control, ControlElement, Module } from '@ijstech/components';
+    import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IGroupQueuePair, Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
@@ -241,6 +243,7 @@ declare module "@scom/scom-group-queue-pair" {
         set showHeader(value: boolean);
         get pairs(): Pair[];
         set pairs(value: Pair[]);
+        constructor(parent?: Container, options?: ControlElement);
         removeRpcWalletEvents(): void;
         onHide(): void;
         isEmptyData(value: IGroupQueuePair): boolean;

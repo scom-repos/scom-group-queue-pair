@@ -155,9 +155,6 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
                 this.setNetworkList(options.networks, options.infuraId);
             }
         }
-        setFlowInvokerId(id) {
-            this.flowInvokerId = id;
-        }
         initRpcWallet(defaultChainId) {
             var _a, _b, _c;
             if (this.rpcWalletId) {
@@ -433,22 +430,26 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
     let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_4.Module {
-        constructor(parent, options) {
-            super(parent, options);
+        constructor() {
+            super(...arguments);
             this.walletEvents = [];
             this.handleClickStart = async () => {
                 var _a, _b, _c, _d;
-                let eventName = `${this.invokerId}:nextStep`;
                 this.executionProperties.fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
                 this.executionProperties.toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
-                this.$eventBus.dispatch(eventName, {
-                    isInitialSetup: true,
-                    tokenRequirements: this.tokenRequirements,
-                    executionProperties: this.executionProperties
-                });
+                if (this.state.handleNextFlowStep)
+                    this.state.handleNextFlowStep({
+                        isInitialSetup: true,
+                        tokenRequirements: this.tokenRequirements,
+                        executionProperties: this.executionProperties
+                    });
             };
-            this.state = new index_1.State({});
-            this.$eventBus = components_4.application.EventBus;
+        }
+        get state() {
+            return this._state;
+        }
+        set state(value) {
+            this._state = value;
         }
         get rpcWallet() {
             return this.state.getRpcWallet();
@@ -462,7 +463,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         async setData(value) {
             this.executionProperties = value.executionProperties;
             this.tokenRequirements = value.tokenRequirements;
-            this.invokerId = value.invokerId;
             await this.resetRpcWallet();
             await this.initializeWidgetConfig();
         }
@@ -555,8 +555,44 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_5.Styles.Theme.ThemeVars;
     let ScomGroupQueuePair = class ScomGroupQueuePair extends components_5.Module {
-        constructor() {
-            super(...arguments);
+        get chainId() {
+            return this.state.getChainId();
+        }
+        get defaultChainId() {
+            return this._data.defaultChainId;
+        }
+        set defaultChainId(value) {
+            this._data.defaultChainId = value;
+        }
+        get wallets() {
+            var _a;
+            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
+        }
+        set wallets(value) {
+            this._data.wallets = value;
+        }
+        get networks() {
+            var _a;
+            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
+        }
+        set networks(value) {
+            this._data.networks = value;
+        }
+        get showHeader() {
+            var _a;
+            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
+        }
+        set showHeader(value) {
+            this._data.showHeader = value;
+        }
+        get pairs() {
+            return this._pairs;
+        }
+        set pairs(value) {
+            this._pairs = value;
+        }
+        constructor(parent, options) {
+            super(parent, options);
             this._data = {
                 wallets: [],
                 networks: []
@@ -594,12 +630,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     const tokens = scom_token_list_5.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
-                    if (this.state.flowInvokerId) {
-                        if (this._data.fromToken)
-                            this.fromTokenInput.address = this._data.fromToken;
-                        if (this._data.toToken)
-                            this.toTokenInput.address = this._data.toToken;
-                    }
+                    if (this._data.fromToken)
+                        this.fromTokenInput.address = this._data.fromToken;
+                    if (this._data.toToken)
+                        this.toTokenInput.address = this._data.toToken;
                     if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
                         this.fromTokenInput.tokenReadOnly = true;
                         this.toTokenInput.tokenReadOnly = true;
@@ -607,7 +641,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         this.fromTokenInput.tokenReadOnly = false;
                         this.toTokenInput.tokenReadOnly = false;
                     }
-                    if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+                    if (this._data.fromToken && this._data.toToken && this.fromTokenInput.token && this.toTokenInput.token) {
                         this.selectToken(this.fromTokenInput.token, true);
                     }
                 });
@@ -640,42 +674,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     await clientWallet.switchNetwork(this.chainId);
                 }
             };
-        }
-        get chainId() {
-            return this.state.getChainId();
-        }
-        get defaultChainId() {
-            return this._data.defaultChainId;
-        }
-        set defaultChainId(value) {
-            this._data.defaultChainId = value;
-        }
-        get wallets() {
-            var _a;
-            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
-        }
-        set wallets(value) {
-            this._data.wallets = value;
-        }
-        get networks() {
-            var _a;
-            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
-        }
-        set networks(value) {
-            this._data.networks = value;
-        }
-        get showHeader() {
-            var _a;
-            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
-        }
-        set showHeader(value) {
-            this._data.showHeader = value;
-        }
-        get pairs() {
-            return this._pairs;
-        }
-        set pairs(value) {
-            this._pairs = value;
+            this.state = new index_2.State(data_json_1.default);
         }
         removeRpcWalletEvents() {
             const rpcWallet = this.state.getRpcWallet();
@@ -692,7 +691,6 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
-            this.state = new index_2.State(data_json_1.default);
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
                 const networks = this.getAttribute('networks', true);
@@ -974,7 +972,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     this.fromPairToken = '';
                     this.toPairToken = '';
                 }
-                if (this.state.flowInvokerId && receipt) {
+                if (this.state.handleAddTransactions && receipt) {
                     const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                     const transactionsInfoArr = [
                         {
@@ -988,8 +986,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             timestamp
                         }
                     ];
-                    const eventName = `${this.state.flowInvokerId}:addTransactions`;
-                    components_5.application.EventBus.dispatch(eventName, {
+                    this.state.handleAddTransactions({
                         list: transactionsInfoArr
                     });
                 }
@@ -1033,13 +1030,14 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 widget = new initialSetup_1.default();
                 target.appendChild(widget);
                 await widget.ready();
+                widget.state = this.state;
                 let properties = options.properties;
                 let tokenRequirements = options.tokenRequirements;
-                let invokerId = options.invokerId;
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
                 await widget.setData({
                     executionProperties: properties,
-                    tokenRequirements,
-                    invokerId
+                    tokenRequirements
                 });
             }
             else {
@@ -1048,8 +1046,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 await widget.ready();
                 let properties = options.properties;
                 let tag = options.tag;
-                let invokerId = options.invokerId;
-                this.state.setFlowInvokerId(invokerId);
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
                 await this.setData(properties);
                 if (tag) {
                     this.setTag(tag);

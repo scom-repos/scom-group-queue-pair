@@ -1,4 +1,4 @@
-import { application, Button, Control, ControlElement, customElements, Label, Module, Panel, Styles, VStack } from '@ijstech/components';
+import { application, Button, Container, Control, ControlElement, customElements, Label, Module, Panel, Styles, VStack } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
 import { IGroupQueuePair, Pair } from './interface';
@@ -97,6 +97,11 @@ export default class ScomGroupQueuePair extends Module {
         this._pairs = value;
     }
 
+	constructor(parent?: Container, options?: ControlElement) {
+		super(parent, options);
+		this.state = new State(configData);
+	}
+
     removeRpcWalletEvents() {
         const rpcWallet = this.state.getRpcWallet();
         if (rpcWallet) rpcWallet.unregisterAllWalletEvents();
@@ -114,7 +119,6 @@ export default class ScomGroupQueuePair extends Module {
     async init() {
         this.isReadyCallbackQueued = true;
         super.init();
-        this.state = new State(configData);
         const lazyLoad = this.getAttribute('lazyLoad', true, false);
         if (!lazyLoad) {
             const networks = this.getAttribute('networks', true);
@@ -346,10 +350,8 @@ export default class ScomGroupQueuePair extends Module {
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
-            if (this.state.flowInvokerId) {
-                if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
-                if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
-            }
+            if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
+            if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
             if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
@@ -357,7 +359,7 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromTokenInput.tokenReadOnly = false;
                 this.toTokenInput.tokenReadOnly = false;
             }
-            if (this.state.flowInvokerId && this.fromTokenInput.token && this.toTokenInput.token) {
+            if (this._data.fromToken && this._data.toToken && this.fromTokenInput.token && this.toTokenInput.token) {
                 this.selectToken(this.fromTokenInput.token, true);
             }
         })
@@ -471,7 +473,7 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromPairToken = '';
                 this.toPairToken = '';
             }
-            if (this.state.flowInvokerId && receipt) {
+            if (this.state.handleAddTransactions && receipt) {
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                 const transactionsInfoArr = [
                     {
@@ -485,8 +487,7 @@ export default class ScomGroupQueuePair extends Module {
                         timestamp
                     }
                 ];
-                const eventName = `${this.state.flowInvokerId}:addTransactions`;
-                application.EventBus.dispatch(eventName, {
+                this.state.handleAddTransactions({
                     list: transactionsInfoArr
                 });
             }
@@ -572,13 +573,14 @@ export default class ScomGroupQueuePair extends Module {
             widget = new ScomGroupQueuePairFlowInitialSetup();
             target.appendChild(widget);
             await widget.ready();
+            widget.state = this.state;
 			let properties = options.properties;
 			let tokenRequirements = options.tokenRequirements;
-			let invokerId = options.invokerId;
+            this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
 			await widget.setData({ 
 				executionProperties: properties, 
-				tokenRequirements, 
-				invokerId 
+				tokenRequirements
 			});
         } else {
             widget = this;
@@ -586,8 +588,8 @@ export default class ScomGroupQueuePair extends Module {
             await widget.ready();
 			let properties = options.properties;
 			let tag = options.tag;
-			let invokerId = options.invokerId;
-			this.state.setFlowInvokerId(invokerId);
+            this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);
