@@ -228,7 +228,7 @@ define("@scom/scom-group-queue-pair/store/index.ts", ["require", "exports", "@sc
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getTokenSymbol = exports.getTokenIcon = void 0;
     const getToken = (chainId, address) => {
-        const tokenMap = scom_token_list_2.tokenStore.tokenMap;
+        const tokenMap = scom_token_list_2.tokenStore.getTokenMapByChainId(chainId);
         const tokenObject = address ? tokenMap[address.toLowerCase()] : scom_token_list_2.ChainNativeTokenByChainId[chainId];
         return tokenObject;
     };

@@ -1,7 +1,7 @@
 import { ChainNativeTokenByChainId, tokenStore, assets } from '@scom/scom-token-list';
 
 const getToken = (chainId: number, address: string) => {
-    const tokenMap = tokenStore.tokenMap;
+    const tokenMap = tokenStore.getTokenMapByChainId(chainId);
     const tokenObject = address ? tokenMap[address.toLowerCase()] : ChainNativeTokenByChainId[chainId];
     return tokenObject;
 }
