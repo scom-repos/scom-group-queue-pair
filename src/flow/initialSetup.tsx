@@ -14,6 +14,8 @@ import ScomTokenInput from "@scom/scom-token-input";
 import { tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
 import { isClientWalletConnected, State } from "../store/index";
+import { Pair } from "../interface";
+import { getGroupQueuePairs, isGroupQueueOracleSupported } from "../api";
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -40,6 +42,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private tokenRequirements: any;
     private executionProperties: any;
     private walletEvents: IEventBusRegistry[] = [];
+    private _pairs: Pair[];
 
     get state(): State {
         return this._state;
@@ -52,6 +55,12 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     }
     private get chainId() {
         return this.executionProperties.chainId || this.executionProperties.defaultChainId;
+    }
+    private get pairs() {
+        return this._pairs;
+    }
+    private set pairs(value: Pair[]) {
+        this._pairs = value;
     }
     private async resetRpcWallet() {
         await this.state.initRpcWallet(this.chainId);
@@ -79,6 +88,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         const tokens = tokenStore.getTokenList(this.chainId);
         this.fromTokenInput.tokenDataListProp = tokens;
         this.toTokenInput.tokenDataListProp = tokens;
+        this.pairs = await getGroupQueuePairs(this.state);
+        console.log("pairs: ", this.pairs);
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
@@ -123,14 +134,46 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.registerEvents();
     }
     private handleClickStart = async () => {
-        this.executionProperties.fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
-        this.executionProperties.toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
-        if (this.state.handleNextFlowStep)
-            this.state.handleNextFlowStep({
-                isInitialSetup: true,
-                tokenRequirements: this.tokenRequirements,
-                executionProperties: this.executionProperties
-            });
+        if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
+        if (this.fromTokenInput.token?.address == this.toTokenInput.token?.address) return;
+        const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
+        const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
+        const fromPairToken = fromToken?.toLowerCase();
+        const toPairToken = toToken?.toLowerCase();
+        const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+        this.executionProperties.fromToken = fromToken;
+        this.executionProperties.toToken = toToken;
+        if (isPairExisted) {
+            if (this.state.handleJumpToStep) {
+                this.state.handleJumpToStep({
+                    widgetName: 'scom-liquidity-provider',
+                    executionProperties: {
+                        tokenIn: fromToken,
+                        tokenOut: toToken,
+                        isCreate: true
+                    }
+                })
+            }
+        } else {
+            const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
+            if (isSupported) {
+                if (this.state.handleNextFlowStep)
+                    this.state.handleNextFlowStep({
+                        tokenRequirements: this.tokenRequirements,
+                        executionProperties: this.executionProperties
+                    });
+            } else {
+                if (this.state.handleJumpToStep) {
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-governance-proposal',
+                        executionProperties: {
+                            fromToken: fromToken,
+                            toToken: toToken
+                        }
+                    })
+                }
+            }
+        }
     }
     render() {
         return (

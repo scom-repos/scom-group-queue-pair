@@ -1,7 +1,5 @@
 /// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
-/// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
-/// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <amd-module name="@scom/scom-group-queue-pair/assets.ts" />
 declare module "@scom/scom-group-queue-pair/assets.ts" {
     function fullPath(path: string): string;
@@ -94,6 +92,7 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
         rpcWalletId: string;
         handleNextFlowStep: (data: any) => Promise<void>;
         handleAddTransactions: (data: any) => Promise<void>;
+        handleJumpToStep: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
@@ -177,10 +176,13 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private tokenRequirements;
         private executionProperties;
         private walletEvents;
+        private _pairs;
         get state(): State;
         set state(value: State);
         private get rpcWallet();
         private get chainId();
+        private get pairs();
+        private set pairs(value);
         private resetRpcWallet;
         setData(value: any): Promise<void>;
         private initWallet;

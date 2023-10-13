@@ -425,7 +425,7 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     }
     exports.getGroupQueuePairs = getGroupQueuePairs;
 });
-define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1) {
+define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
@@ -434,15 +434,51 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             super(...arguments);
             this.walletEvents = [];
             this.handleClickStart = async () => {
-                var _a, _b, _c, _d;
-                this.executionProperties.fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
-                this.executionProperties.toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
-                if (this.state.handleNextFlowStep)
-                    this.state.handleNextFlowStep({
-                        isInitialSetup: true,
-                        tokenRequirements: this.tokenRequirements,
-                        executionProperties: this.executionProperties
-                    });
+                var _a, _b, _c, _d, _e, _f;
+                if (!this.fromTokenInput.token || !this.toTokenInput.token)
+                    return;
+                if (((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) == ((_b = this.toTokenInput.token) === null || _b === void 0 ? void 0 : _b.address))
+                    return;
+                const fromToken = ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.fromTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
+                const toToken = ((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.address) || ((_f = this.toTokenInput.token) === null || _f === void 0 ? void 0 : _f.symbol);
+                const fromPairToken = fromToken === null || fromToken === void 0 ? void 0 : fromToken.toLowerCase();
+                const toPairToken = toToken === null || toToken === void 0 ? void 0 : toToken.toLowerCase();
+                const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+                this.executionProperties.fromToken = fromToken;
+                this.executionProperties.toToken = toToken;
+                if (isPairExisted) {
+                    if (this.state.handleJumpToStep) {
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-liquidity-provider',
+                            executionProperties: {
+                                tokenIn: fromToken,
+                                tokenOut: toToken,
+                                isCreate: true
+                            }
+                        });
+                    }
+                }
+                else {
+                    const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, fromPairToken, toPairToken);
+                    if (isSupported) {
+                        if (this.state.handleNextFlowStep)
+                            this.state.handleNextFlowStep({
+                                tokenRequirements: this.tokenRequirements,
+                                executionProperties: this.executionProperties
+                            });
+                    }
+                    else {
+                        if (this.state.handleJumpToStep) {
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-governance-proposal',
+                                executionProperties: {
+                                    fromToken: fromToken,
+                                    toToken: toToken
+                                }
+                            });
+                        }
+                    }
+                }
             };
         }
         get state() {
@@ -456,6 +492,12 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
         get chainId() {
             return this.executionProperties.chainId || this.executionProperties.defaultChainId;
+        }
+        get pairs() {
+            return this._pairs;
+        }
+        set pairs(value) {
+            this._pairs = value;
         }
         async resetRpcWallet() {
             await this.state.initRpcWallet(this.chainId);
@@ -484,6 +526,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             const tokens = scom_token_list_4.tokenStore.getTokenList(this.chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
+            this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+            console.log("pairs: ", this.pairs);
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -550,7 +594,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
     ], ScomGroupQueuePairFlowInitialSetup);
     exports.default = ScomGroupQueuePairFlowInitialSetup;
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, index_css_1, api_1, initialSetup_1) {
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, index_css_1, api_2, initialSetup_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_5.Styles.Theme.ThemeVars;
@@ -637,7 +681,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
                         this.fromTokenInput.tokenReadOnly = true;
                         this.toTokenInput.tokenReadOnly = true;
-                        this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+                        this.pairs = await (0, api_2.getGroupQueuePairs)(this.state);
                         this.fromTokenInput.tokenReadOnly = false;
                         this.toTokenInput.tokenReadOnly = false;
                     }
@@ -869,7 +913,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.fromPairToken = this.toPairToken = "";
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
-                this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+                this.pairs = await (0, api_2.getGroupQueuePairs)(this.state);
                 this.fromTokenInput.tokenReadOnly = false;
                 this.toTokenInput.tokenReadOnly = false;
                 this.refreshUI();
@@ -937,7 +981,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 const WETH9 = (0, index_2.getWETH)(this.chainId);
                 this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
                 this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
-                const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromPairToken, this.toPairToken);
+                const isSupported = await (0, api_2.isGroupQueueOracleSupported)(this.state, this.fromPairToken, this.toPairToken);
                 this.isReadyToCreate = isSupported;
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
                 if (!isSupported) {
@@ -964,7 +1008,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.btnCreate.rightIcon.spin = true;
                 this.btnCreate.rightIcon.visible = true;
                 const chainId = this.chainId;
-                const { receipt, error } = await (0, api_1.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
+                const { receipt, error } = await (0, api_2.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
                 }
@@ -1035,6 +1079,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 let tokenRequirements = options.tokenRequirements;
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
                 await widget.setData({
                     executionProperties: properties,
                     tokenRequirements
@@ -1048,6 +1093,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 let tag = options.tag;
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
                 await this.setData(properties);
                 if (tag) {
                     this.setTag(tag);

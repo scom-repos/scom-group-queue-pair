@@ -578,6 +578,7 @@ export default class ScomGroupQueuePair extends Module {
 			let tokenRequirements = options.tokenRequirements;
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
 			await widget.setData({ 
 				executionProperties: properties, 
 				tokenRequirements
@@ -590,6 +591,7 @@ export default class ScomGroupQueuePair extends Module {
 			let tag = options.tag;
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);

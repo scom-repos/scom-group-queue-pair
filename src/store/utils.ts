@@ -10,6 +10,7 @@ export class State {
   rpcWalletId: string = '';
   handleNextFlowStep: (data: any) => Promise<void>;
   handleAddTransactions: (data: any) => Promise<void>;
+  handleJumpToStep: (data: any) => Promise<void>;
 
   constructor(options: any) {
     this.networkMap = getNetworkList();
