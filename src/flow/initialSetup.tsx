@@ -141,6 +141,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         const fromPairToken = fromToken?.toLowerCase();
         const toPairToken = toToken?.toLowerCase();
         const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+        this.executionProperties.isFlow = true;
         this.executionProperties.fromToken = fromToken;
         this.executionProperties.toToken = toToken;
         if (isPairExisted) {
@@ -150,7 +151,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     executionProperties: {
                         tokenIn: fromToken,
                         tokenOut: toToken,
-                        isCreate: true
+                        isCreate: true,
+                        isFlow: true
                     }
                 })
             }
@@ -168,7 +170,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         widgetName: 'scom-governance-proposal',
                         executionProperties: {
                             fromToken: fromToken,
-                            toToken: toToken
+                            toToken: toToken,
+                            isFlow: true
                         }
                     })
                 }

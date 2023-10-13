@@ -8,6 +8,7 @@ export interface IGroupQueuePair {
     showHeader?: boolean;
     fromToken?: string;
     toToken?: string;
+    isFlow?: boolean;
 }
 
 export type Pair = {

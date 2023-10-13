@@ -350,8 +350,11 @@ export default class ScomGroupQueuePair extends Module {
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
-            if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
-            if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
+            if (this._data.isFlow) {
+                this.fromPairToken = this.toPairToken = "";
+                if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
+                if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
+            }
             if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
@@ -359,7 +362,7 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromTokenInput.tokenReadOnly = false;
                 this.toTokenInput.tokenReadOnly = false;
             }
-            if (this._data.fromToken && this._data.toToken && this.fromTokenInput.token && this.toTokenInput.token) {
+            if (this._data.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
                 this.selectToken(this.fromTokenInput.token, true);
             }
         })

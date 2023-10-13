@@ -19,6 +19,7 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         showHeader?: boolean;
         fromToken?: string;
         toToken?: string;
+        isFlow?: boolean;
     }
     export type Pair = {
         fromToken: string;
@@ -280,6 +281,7 @@ declare module "@scom/scom-group-queue-pair" {
                 showHeader?: boolean;
                 fromToken?: string;
                 toToken?: string;
+                isFlow?: boolean;
             }>;
             setData: (properties: IGroupQueuePair, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;

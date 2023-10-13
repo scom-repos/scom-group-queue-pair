@@ -444,6 +444,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                 const fromPairToken = fromToken === null || fromToken === void 0 ? void 0 : fromToken.toLowerCase();
                 const toPairToken = toToken === null || toToken === void 0 ? void 0 : toToken.toLowerCase();
                 const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+                this.executionProperties.isFlow = true;
                 this.executionProperties.fromToken = fromToken;
                 this.executionProperties.toToken = toToken;
                 if (isPairExisted) {
@@ -453,7 +454,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                             executionProperties: {
                                 tokenIn: fromToken,
                                 tokenOut: toToken,
-                                isCreate: true
+                                isCreate: true,
+                                isFlow: true
                             }
                         });
                     }
@@ -473,7 +475,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                                 widgetName: 'scom-governance-proposal',
                                 executionProperties: {
                                     fromToken: fromToken,
-                                    toToken: toToken
+                                    toToken: toToken,
+                                    isFlow: true
                                 }
                             });
                         }
@@ -674,10 +677,13 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     const tokens = scom_token_list_5.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
-                    if (this._data.fromToken)
-                        this.fromTokenInput.address = this._data.fromToken;
-                    if (this._data.toToken)
-                        this.toTokenInput.address = this._data.toToken;
+                    if (this._data.isFlow) {
+                        this.fromPairToken = this.toPairToken = "";
+                        if (this._data.fromToken)
+                            this.fromTokenInput.address = this._data.fromToken;
+                        if (this._data.toToken)
+                            this.toTokenInput.address = this._data.toToken;
+                    }
                     if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
                         this.fromTokenInput.tokenReadOnly = true;
                         this.toTokenInput.tokenReadOnly = true;
@@ -685,7 +691,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                         this.fromTokenInput.tokenReadOnly = false;
                         this.toTokenInput.tokenReadOnly = false;
                     }
-                    if (this._data.fromToken && this._data.toToken && this.fromTokenInput.token && this.toTokenInput.token) {
+                    if (this._data.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
                         this.selectToken(this.fromTokenInput.token, true);
                     }
                 });
