@@ -11,11 +11,11 @@ import {
 } from "@ijstech/components";
 import { Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
 import ScomTokenInput from "@scom/scom-token-input";
-import { tokenStore } from "@scom/scom-token-list";
+import { ITokenObject, tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
 import { isClientWalletConnected, State } from "../store/index";
 import { Pair } from "../interface";
-import { getGroupQueuePairs, isGroupQueueOracleSupported } from "../api";
+import { getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, stakeOf } from "../api";
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -37,12 +37,15 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private btnConnectWallet: Button;
     private fromTokenInput: ScomTokenInput;
     private toTokenInput: ScomTokenInput;
+    private btnStart: Button;
     private mdWallet: ScomWalletModal;
     private _state: State;
     private tokenRequirements: any;
     private executionProperties: any;
     private walletEvents: IEventBusRegistry[] = [];
     private _pairs: Pair[];
+    private minThreshold: number = 0;
+    private votingBalance: number = 0;
 
     get state(): State {
         return this._state;
@@ -62,12 +65,16 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private set pairs(value: Pair[]) {
         this._pairs = value;
     }
+    private get hasEnoughStake() {
+        return this.votingBalance >= this.minThreshold;
+    }
     private async resetRpcWallet() {
         await this.state.initRpcWallet(this.chainId);
     }
     async setData(value: any) {
         this.executionProperties = value.executionProperties;
         this.tokenRequirements = value.tokenRequirements;
+        this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
         await this.resetRpcWallet();
         await this.initializeWidgetConfig();
     }
@@ -89,7 +96,9 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.fromTokenInput.tokenDataListProp = tokens;
         this.toTokenInput.tokenDataListProp = tokens;
         this.pairs = await getGroupQueuePairs(this.state);
-        console.log("pairs: ", this.pairs);
+        const paramValueObj = await getVotingValue(this.state, 'vote');
+        this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
+        this.votingBalance = (await stakeOf(this.state, this.rpcWallet.account.address)).toNumber();
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
@@ -133,9 +142,27 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.toTokenInput.style.setProperty('--input-font_color', '#fff');
         this.registerEvents();
     }
+    private onSelectFromToken(token: ITokenObject) {
+        this.handleSelectToken(true);
+    }
+
+    private onSelectToToken(token: ITokenObject) {
+        this.handleSelectToken(false);
+    }
+    private handleSelectToken(isFrom: boolean) {
+        let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
+        let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
+        if (fromToken && toToken && fromToken === toToken) {
+            if (isFrom) {
+                this.toTokenInput.token = null;
+            } else {
+                this.fromTokenInput.token = null;
+            }
+        }
+        this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
+    }
     private handleClickStart = async () => {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
-        if (this.fromTokenInput.token?.address == this.toTokenInput.token?.address) return;
         const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
         const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
         const fromPairToken = fromToken?.toLowerCase();
@@ -166,14 +193,28 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     });
             } else {
                 if (this.state.handleJumpToStep) {
-                    this.state.handleJumpToStep({
-                        widgetName: 'scom-governance-proposal',
-                        executionProperties: {
-                            fromToken: fromToken,
-                            toToken: toToken,
-                            isFlow: true
-                        }
-                    })
+                    if (!this.hasEnoughStake) {
+                        let value = (this.minThreshold - this.votingBalance).toString();
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-governance-staking',
+                            executionProperties: {
+                                tokenInputValue: value,
+                                action: "add",
+                                fromToken: fromToken,
+                                toToken: toToken,
+                                isFlow: true
+                            }
+                        })
+                    } else {
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-governance-proposal',
+                            executionProperties: {
+                                fromToken: fromToken,
+                                toToken: toToken,
+                                isFlow: true
+                            }
+                        })
+                    }
                 }
             }
         }
@@ -204,6 +245,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         isBtnMaxShown={false}
                         isInputShown={false}
                         border={{ radius: 12 }}
+                        onSelectToken={this.onSelectFromToken.bind(this)}
                     ></i-scom-token-input>
                     <i-label caption="to" font={{ size: "1rem" }}></i-label>
                     <i-scom-token-input
@@ -213,6 +255,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         isBtnMaxShown={false}
                         isInputShown={false}
                         border={{ radius: 12 }}
+                        onSelectToken={this.onSelectToToken.bind(this)}
                     ></i-scom-token-input>
                 </i-hstack>
                 <i-hstack horizontalAlignment='center'>

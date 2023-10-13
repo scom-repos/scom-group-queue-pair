@@ -1,4 +1,4 @@
-import { BigNumber, TransactionReceipt, Wallet } from "@ijstech/eth-wallet"
+import { BigNumber, TransactionReceipt, Utils, Wallet } from "@ijstech/eth-wallet"
 import { Contracts } from '@scom/oswap-openswap-contract';
 import { ChainNativeTokenByChainId } from "@scom/scom-token-list";
 import { Pair } from "./interface";
@@ -70,4 +70,42 @@ export async function getGroupQueuePairs(state: State) {
     await Promise.all(tasks);
 
     return pairs
+}
+
+export async function getVotingValue(state: State, param1: any) {
+    let result: {
+        minExeDelay?: number;
+        minVoteDuration?: number;
+        maxVoteDuration?: number;
+        minOaxTokenToCreateVote?: number;
+        minQuorum?: number;
+    } = {};
+    const wallet = state.getRpcWallet();
+    const chainId = state.getChainId();
+    const address = state.getAddresses(chainId)?.OAXDEX_Governance;
+    if (address) {
+        const govContract = new Contracts.OAXDEX_Governance(wallet, address);
+        const params = await govContract.getVotingParams(Utils.stringToBytes32(param1) as string);
+        result = {
+            minExeDelay: params.minExeDelay.toNumber(),
+            minVoteDuration: params.minVoteDuration.toNumber(),
+            maxVoteDuration: params.maxVoteDuration.toNumber(),
+            minOaxTokenToCreateVote: Number(Utils.fromDecimals(params.minOaxTokenToCreateVote).toFixed()),
+            minQuorum: Number(Utils.fromDecimals(params.minQuorum).toFixed())
+        };
+    }
+    return result;
+}
+
+export async function stakeOf(state: State, address: string) {
+    let result = new BigNumber(0);
+    try {
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const gov = state.getAddresses(chainId).OAXDEX_Governance;
+        const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
+        let stakeOf = await govContract.stakeOf(address);
+        result = Utils.fromDecimals(stakeOf, state.getGovToken(chainId).decimals || 18);
+    } catch (err) {}
+    return result;
 }

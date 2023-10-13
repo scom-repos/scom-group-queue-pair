@@ -103,34 +103,50 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
     exports.coreAddress = {
         56: {
             WrappedNativeToken: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+            OAXDEX_Governance: "0x510a179AA399672e26e54Ed8Ce0e822cc9D0a98D",
+            GOV_TOKEN: "0xb32aC3C79A94aC1eb258f3C830bBDbc676483c93",
             OSWAP_RestrictedFactory: "0x91d137464b93caC7E2c2d4444a9D8609E4473B70",
         },
         97: {
             WrappedNativeToken: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
+            OAXDEX_Governance: "0xDfC070E2dbDAdcf892aE2ed2E2C426aDa835c528",
+            GOV_TOKEN: "0x45eee762aaeA4e5ce317471BDa8782724972Ee19",
             OSWAP_RestrictedFactory: "0xa158FB71cA5EF59f707c6F8D0b9CC5765F97Fd60",
         },
         137: {
             WrappedNativeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+            OAXDEX_Governance: "0x5580B68478e714C02850251353Cc58B85D4033C3",
+            GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0xF879576c2D674C5D22f256083DC8fD019a3f33A1",
         },
         80001: {
             WrappedNativeToken: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+            OAXDEX_Governance: "0x198b150E554F46aee505a7fb574F5D7895889772",
+            GOV_TOKEN: "0xb0AF504638BDe5e53D6EaE1119dEd13411c35cF2",
             OSWAP_RestrictedFactory: "0x6D2b196aBf09CF97612a5c062bF14EC278F6D677",
         },
         43113: {
             WrappedNativeToken: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+            OAXDEX_Governance: "0xC025b30e6D4cBe4B6978a1A71a86e6eCB9F87F92",
+            GOV_TOKEN: "0x27eF998b96c9A66937DBAc38c405Adcd7fa5e7DB",
             OSWAP_RestrictedFactory: "0x6C99c8E2c587706281a5B66bA7617DA7e2Ba6e48",
         },
         43114: {
             WrappedNativeToken: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+            OAXDEX_Governance: "0x845308010c3b699150cdd54dcf0e7c4b8653e6b2",
+            GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0x739f0BBcdAd415127FE8d5d6ED053e9D817BdAdb",
         },
         42161: {
             WrappedNativeToken: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            OAXDEX_Governance: "0x5580B68478e714C02850251353Cc58B85D4033C3",
+            GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0x408aAf94BD851eb991dA146dFc7C290aA42BA70f",
         },
         421613: {
             WrappedNativeToken: "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f",
+            OAXDEX_Governance: "0x6f460B0Bf633E22503Efa460429B0Ab32d655B9D",
+            GOV_TOKEN: "0x5580B68478e714C02850251353Cc58B85D4033C3",
             OSWAP_RestrictedFactory: "0x6f641f4F5948954F7cd675f3D874Ac60b193bA0d",
         }
     };
@@ -209,6 +225,17 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
         }
         getAddresses(chainId) {
             return core_1.coreAddress[chainId || this.getChainId()];
+        }
+        getGovToken(chainId) {
+            let govToken;
+            let address = this.getAddresses(chainId).GOV_TOKEN;
+            if (chainId == 43113 || chainId == 43114 || chainId == 42161 || chainId == 421613 || chainId == 80001 || chainId == 137) {
+                govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP' };
+            }
+            else {
+                govToken = { address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap' };
+            }
+            return govToken;
         }
     }
     exports.State = State;
@@ -361,7 +388,7 @@ define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijst
 define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
+    exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
     //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
     async function doCreatePair(state, tokenA, tokenB) {
@@ -424,6 +451,40 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         return pairs;
     }
     exports.getGroupQueuePairs = getGroupQueuePairs;
+    async function getVotingValue(state, param1) {
+        var _a;
+        let result = {};
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const address = (_a = state.getAddresses(chainId)) === null || _a === void 0 ? void 0 : _a.OAXDEX_Governance;
+        if (address) {
+            const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, address);
+            const params = await govContract.getVotingParams(eth_wallet_2.Utils.stringToBytes32(param1));
+            result = {
+                minExeDelay: params.minExeDelay.toNumber(),
+                minVoteDuration: params.minVoteDuration.toNumber(),
+                maxVoteDuration: params.maxVoteDuration.toNumber(),
+                minOaxTokenToCreateVote: Number(eth_wallet_2.Utils.fromDecimals(params.minOaxTokenToCreateVote).toFixed()),
+                minQuorum: Number(eth_wallet_2.Utils.fromDecimals(params.minQuorum).toFixed())
+            };
+        }
+        return result;
+    }
+    exports.getVotingValue = getVotingValue;
+    async function stakeOf(state, address) {
+        let result = new eth_wallet_2.BigNumber(0);
+        try {
+            const wallet = state.getRpcWallet();
+            const chainId = state.getChainId();
+            const gov = state.getAddresses(chainId).OAXDEX_Governance;
+            const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
+            let stakeOf = await govContract.stakeOf(address);
+            result = eth_wallet_2.Utils.fromDecimals(stakeOf, state.getGovToken(chainId).decimals || 18);
+        }
+        catch (err) { }
+        return result;
+    }
+    exports.stakeOf = stakeOf;
 });
 define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
@@ -433,14 +494,14 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         constructor() {
             super(...arguments);
             this.walletEvents = [];
+            this.minThreshold = 0;
+            this.votingBalance = 0;
             this.handleClickStart = async () => {
-                var _a, _b, _c, _d, _e, _f;
+                var _a, _b, _c, _d;
                 if (!this.fromTokenInput.token || !this.toTokenInput.token)
                     return;
-                if (((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) == ((_b = this.toTokenInput.token) === null || _b === void 0 ? void 0 : _b.address))
-                    return;
-                const fromToken = ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.fromTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
-                const toToken = ((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.address) || ((_f = this.toTokenInput.token) === null || _f === void 0 ? void 0 : _f.symbol);
+                const fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
+                const toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
                 const fromPairToken = fromToken === null || fromToken === void 0 ? void 0 : fromToken.toLowerCase();
                 const toPairToken = toToken === null || toToken === void 0 ? void 0 : toToken.toLowerCase();
                 const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
@@ -471,14 +532,29 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     }
                     else {
                         if (this.state.handleJumpToStep) {
-                            this.state.handleJumpToStep({
-                                widgetName: 'scom-governance-proposal',
-                                executionProperties: {
-                                    fromToken: fromToken,
-                                    toToken: toToken,
-                                    isFlow: true
-                                }
-                            });
+                            if (!this.hasEnoughStake) {
+                                let value = (this.minThreshold - this.votingBalance).toString();
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-staking',
+                                    executionProperties: {
+                                        tokenInputValue: value,
+                                        action: "add",
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        isFlow: true
+                                    }
+                                });
+                            }
+                            else {
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-proposal',
+                                    executionProperties: {
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        isFlow: true
+                                    }
+                                });
+                            }
                         }
                     }
                 }
@@ -502,12 +578,17 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         set pairs(value) {
             this._pairs = value;
         }
+        get hasEnoughStake() {
+            return this.votingBalance >= this.minThreshold;
+        }
         async resetRpcWallet() {
             await this.state.initRpcWallet(this.chainId);
         }
         async setData(value) {
+            var _a, _b;
             this.executionProperties = value.executionProperties;
             this.tokenRequirements = value.tokenRequirements;
+            this.btnStart.enabled = !!(((_a = this.fromTokenInput) === null || _a === void 0 ? void 0 : _a.token) && ((_b = this.toTokenInput) === null || _b === void 0 ? void 0 : _b.token));
             await this.resetRpcWallet();
             await this.initializeWidgetConfig();
         }
@@ -530,7 +611,9 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
             this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
-            console.log("pairs: ", this.pairs);
+            const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
+            this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
+            this.votingBalance = (await (0, api_1.stakeOf)(this.state, this.rpcWallet.account.address)).toNumber();
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -575,6 +658,26 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.toTokenInput.style.setProperty('--input-font_color', '#fff');
             this.registerEvents();
         }
+        onSelectFromToken(token) {
+            this.handleSelectToken(true);
+        }
+        onSelectToToken(token) {
+            this.handleSelectToken(false);
+        }
+        handleSelectToken(isFrom) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            let fromToken = (_c = (((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol))) === null || _c === void 0 ? void 0 : _c.toLowerCase();
+            let toToken = (_f = (((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.address) || ((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.symbol))) === null || _f === void 0 ? void 0 : _f.toLowerCase();
+            if (fromToken && toToken && fromToken === toToken) {
+                if (isFrom) {
+                    this.toTokenInput.token = null;
+                }
+                else {
+                    this.fromTokenInput.token = null;
+                }
+            }
+            this.btnStart.enabled = !!(((_g = this.fromTokenInput) === null || _g === void 0 ? void 0 : _g.token) && ((_h = this.toTokenInput) === null || _h === void 0 ? void 0 : _h.token));
+        }
         render() {
             return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
                 this.$render("i-label", { caption: "Get Ready to Create Pair" }),
@@ -584,9 +687,9 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                         this.$render("i-button", { id: "btnConnectWallet", caption: 'Connect Wallet', font: { color: Theme.colors.primary.contrastText }, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, onClick: this.connectWallet }))),
                 this.$render("i-label", { caption: "Select a Pair" }),
                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
-                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } }),
+                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectFromToken.bind(this) }),
                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
-                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 } })),
+                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
                 this.$render("i-hstack", { horizontalAlignment: 'center' },
                     this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart })),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));

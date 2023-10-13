@@ -75,6 +75,8 @@ declare module "@scom/scom-group-queue-pair/formSchema.ts" {
 declare module "@scom/scom-group-queue-pair/store/core.ts" {
     export interface CoreAddress {
         WrappedNativeToken: string;
+        OAXDEX_Governance: string;
+        GOV_TOKEN: string;
         OSWAP_RestrictedFactory: string;
     }
     export const coreAddress: {
@@ -102,6 +104,7 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
         getChainId(): number;
         private setNetworkList;
         getAddresses(chainId?: number): import("@scom/scom-group-queue-pair/store/core.ts").CoreAddress;
+        getGovToken(chainId: number): ITokenObject;
     }
     export function isClientWalletConnected(): boolean;
     export const getWETH: (chainId: number) => ITokenObject;
@@ -142,7 +145,7 @@ declare module "@scom/scom-group-queue-pair/index.css.ts" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair/api.ts" />
 declare module "@scom/scom-group-queue-pair/api.ts" {
-    import { TransactionReceipt } from "@ijstech/eth-wallet";
+    import { BigNumber, TransactionReceipt } from "@ijstech/eth-wallet";
     import { Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { State } from "@scom/scom-group-queue-pair/store/index.ts";
     export const nullAddress = "0x0000000000000000000000000000000000000000";
@@ -152,6 +155,14 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
     }>;
     export function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string): Promise<boolean>;
     export function getGroupQueuePairs(state: State): Promise<Pair[]>;
+    export function getVotingValue(state: State, param1: any): Promise<{
+        minExeDelay?: number;
+        minVoteDuration?: number;
+        maxVoteDuration?: number;
+        minOaxTokenToCreateVote?: number;
+        minQuorum?: number;
+    }>;
+    export function stakeOf(state: State, address: string): Promise<BigNumber>;
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
@@ -172,18 +183,22 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private btnConnectWallet;
         private fromTokenInput;
         private toTokenInput;
+        private btnStart;
         private mdWallet;
         private _state;
         private tokenRequirements;
         private executionProperties;
         private walletEvents;
         private _pairs;
+        private minThreshold;
+        private votingBalance;
         get state(): State;
         set state(value: State);
         private get rpcWallet();
         private get chainId();
         private get pairs();
         private set pairs(value);
+        private get hasEnoughStake();
         private resetRpcWallet;
         setData(value: any): Promise<void>;
         private initWallet;
@@ -193,6 +208,9 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private registerEvents;
         onHide(): void;
         init(): void;
+        private onSelectFromToken;
+        private onSelectToToken;
+        private handleSelectToken;
         private handleClickStart;
         render(): any;
     }
