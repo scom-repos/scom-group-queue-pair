@@ -468,6 +468,8 @@ export default class ScomGroupQueuePair extends Module {
             this.btnCreate.rightIcon.spin = true;
             this.btnCreate.rightIcon.visible = true;
             const chainId = this.chainId;
+            const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
+            const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
 
             const { receipt, error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
             if (error) {
@@ -493,6 +495,17 @@ export default class ScomGroupQueuePair extends Module {
                 this.state.handleAddTransactions({
                     list: transactionsInfoArr
                 });
+            }
+            if (receipt && this.state.handleJumpToStep) {
+                this.state.handleJumpToStep({
+                    widgetName: 'scom-liquidity-provider',
+                    executionProperties: {
+                        tokenIn: fromToken,
+                        tokenOut: toToken,
+                        isCreate: true,
+                        isFlow: true
+                    }
+                })
             }
         } catch (error) {
             console.error(error);

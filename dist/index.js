@@ -1001,6 +1001,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             }
         }
         async onCreatePair() {
+            var _a, _b, _c, _d;
             try {
                 if (!this.state.isRpcWalletConnected()) {
                     this.connectWallet();
@@ -1014,6 +1015,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.btnCreate.rightIcon.spin = true;
                 this.btnCreate.rightIcon.visible = true;
                 const chainId = this.chainId;
+                const fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
+                const toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
                 const { receipt, error } = await (0, api_2.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
@@ -1038,6 +1041,17 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     ];
                     this.state.handleAddTransactions({
                         list: transactionsInfoArr
+                    });
+                }
+                if (receipt && this.state.handleJumpToStep) {
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-liquidity-provider',
+                        executionProperties: {
+                            tokenIn: fromToken,
+                            tokenOut: toToken,
+                            isCreate: true,
+                            isFlow: true
+                        }
                     });
                 }
             }
