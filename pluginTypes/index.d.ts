@@ -184,6 +184,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private fromTokenInput;
         private toTokenInput;
         private btnStart;
+        private mdAlert;
         private mdWallet;
         private _state;
         private tokenRequirements;
@@ -191,14 +192,12 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private walletEvents;
         private _pairs;
         private minThreshold;
-        private votingBalance;
         get state(): State;
         set state(value: State);
         private get rpcWallet();
         private get chainId();
         private get pairs();
         private set pairs(value);
-        private get hasEnoughStake();
         private resetRpcWallet;
         setData(value: any): Promise<void>;
         private initWallet;
@@ -211,6 +210,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private onSelectFromToken;
         private onSelectToToken;
         private handleSelectToken;
+        private closeModal;
         private handleClickStart;
         render(): any;
     }

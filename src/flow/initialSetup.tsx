@@ -1,11 +1,10 @@
 import {
     application,
     Button,
-    Container,
     ControlElement,
     customElements,
-    IEventBus,
     Label,
+    Modal,
     Module,
     Styles
 } from "@ijstech/components";
@@ -38,6 +37,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private fromTokenInput: ScomTokenInput;
     private toTokenInput: ScomTokenInput;
     private btnStart: Button;
+    private mdAlert: Modal;
     private mdWallet: ScomWalletModal;
     private _state: State;
     private tokenRequirements: any;
@@ -45,7 +45,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private walletEvents: IEventBusRegistry[] = [];
     private _pairs: Pair[];
     private minThreshold: number = 0;
-    private votingBalance: number = 0;
 
     get state(): State {
         return this._state;
@@ -64,9 +63,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     }
     private set pairs(value: Pair[]) {
         this._pairs = value;
-    }
-    private get hasEnoughStake() {
-        return this.votingBalance >= this.minThreshold;
     }
     private async resetRpcWallet() {
         await this.state.initRpcWallet(this.chainId);
@@ -98,7 +94,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.pairs = await getGroupQueuePairs(this.state);
         const paramValueObj = await getVotingValue(this.state, 'vote');
         this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
-        this.votingBalance = (await stakeOf(this.state, this.rpcWallet.account.address)).toNumber();
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
@@ -161,6 +156,9 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         }
         this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
+    private closeModal() {
+      this.mdAlert.visible = false;
+    }
     private handleClickStart = async () => {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
         const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
@@ -184,6 +182,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 })
             }
         } else {
+            this.btnStart.rightIcon.spin = true;
+            this.btnStart.rightIcon.visible = true;
             const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
             if (isSupported) {
                 if (this.state.handleNextFlowStep)
@@ -193,18 +193,22 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     });
             } else {
                 if (this.state.handleJumpToStep) {
-                    if (!this.hasEnoughStake) {
-                        let value = (this.minThreshold - this.votingBalance).toString();
-                        this.state.handleJumpToStep({
-                            widgetName: 'scom-governance-staking',
-                            executionProperties: {
-                                tokenInputValue: value,
-                                action: "add",
-                                fromToken: fromToken,
-                                toToken: toToken,
-                                isFlow: true
-                            }
-                        })
+                    const votingBalance = (await stakeOf(this.state, this.rpcWallet.account.address)).toNumber();
+                    if (votingBalance < this.minThreshold) {
+                        let value = (this.minThreshold - votingBalance).toString();
+                        this.mdAlert.onClose = () => {
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-governance-staking',
+                                executionProperties: {
+                                    tokenInputValue: value,
+                                    action: "add",
+                                    fromToken: fromToken,
+                                    toToken: toToken,
+                                    isFlow: true
+                                }
+                            });
+                        }
+                        this.mdAlert.visible = true;
                     } else {
                         this.state.handleJumpToStep({
                             widgetName: 'scom-governance-proposal',
@@ -217,6 +221,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     }
                 }
             }
+            this.btnStart.rightIcon.spin = false;
+            this.btnStart.rightIcon.visible = false;
         }
     }
     render() {
@@ -267,6 +273,35 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         onClick={this.handleClickStart}
                     ></i-button>
                 </i-hstack>
+                <i-modal id="mdAlert" maxWidth="400px">
+                    <i-panel
+                        width="100%"
+                        padding={{ top: "1.5rem", bottom: "1.5rem", left: "1.5rem", right: "1.5rem" }}
+                    >
+                        <i-vstack horizontalAlignment="center" gap="1.75rem">
+                            <i-icon
+                                width={55}
+                                height={55}
+                                name="exclamation"
+                                fill={Theme.colors.warning.main}
+                                padding={{ top: "0.6rem", bottom: "0.6rem", left: "0.6rem", right: "0.6rem" }}
+                                border={{ width: 2, style: 'solid', color: Theme.colors.warning.main, radius: '50%' }}
+                            ></i-icon>
+                            <i-vstack class="text-center" horizontalAlignment="center" gap="0.75rem" lineHeight={1.5}>
+                                <i-label caption="Insufficient Voting Balance" font={{ size: '1.25rem', bold: true }}></i-label>
+                            </i-vstack>
+                            <i-hstack verticalAlignment='center' gap="0.5rem">
+                                <i-button
+                                    padding={{ top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }}
+                                    caption="Cancel"
+                                    font={{ color: Theme.colors.secondary.contrastText }}
+                                    background={{ color: Theme.colors.secondary.main }}
+                                    onClick={this.closeModal.bind(this)}
+                                ></i-button>
+                            </i-hstack>
+                        </i-vstack>
+                    </i-panel>
+                </i-modal>
                 <i-scom-wallet-modal id="mdWallet" wallets={[]} />
             </i-vstack>
         )

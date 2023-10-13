@@ -495,7 +495,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             super(...arguments);
             this.walletEvents = [];
             this.minThreshold = 0;
-            this.votingBalance = 0;
             this.handleClickStart = async () => {
                 var _a, _b, _c, _d;
                 if (!this.fromTokenInput.token || !this.toTokenInput.token)
@@ -522,6 +521,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     }
                 }
                 else {
+                    this.btnStart.rightIcon.spin = true;
+                    this.btnStart.rightIcon.visible = true;
                     const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, fromPairToken, toPairToken);
                     if (isSupported) {
                         if (this.state.handleNextFlowStep)
@@ -532,18 +533,22 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     }
                     else {
                         if (this.state.handleJumpToStep) {
-                            if (!this.hasEnoughStake) {
-                                let value = (this.minThreshold - this.votingBalance).toString();
-                                this.state.handleJumpToStep({
-                                    widgetName: 'scom-governance-staking',
-                                    executionProperties: {
-                                        tokenInputValue: value,
-                                        action: "add",
-                                        fromToken: fromToken,
-                                        toToken: toToken,
-                                        isFlow: true
-                                    }
-                                });
+                            const votingBalance = (await (0, api_1.stakeOf)(this.state, this.rpcWallet.account.address)).toNumber();
+                            if (votingBalance < this.minThreshold) {
+                                let value = (this.minThreshold - votingBalance).toString();
+                                this.mdAlert.onClose = () => {
+                                    this.state.handleJumpToStep({
+                                        widgetName: 'scom-governance-staking',
+                                        executionProperties: {
+                                            tokenInputValue: value,
+                                            action: "add",
+                                            fromToken: fromToken,
+                                            toToken: toToken,
+                                            isFlow: true
+                                        }
+                                    });
+                                };
+                                this.mdAlert.visible = true;
                             }
                             else {
                                 this.state.handleJumpToStep({
@@ -557,6 +562,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                             }
                         }
                     }
+                    this.btnStart.rightIcon.spin = false;
+                    this.btnStart.rightIcon.visible = false;
                 }
             };
         }
@@ -577,9 +584,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
         set pairs(value) {
             this._pairs = value;
-        }
-        get hasEnoughStake() {
-            return this.votingBalance >= this.minThreshold;
         }
         async resetRpcWallet() {
             await this.state.initRpcWallet(this.chainId);
@@ -613,7 +617,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
             const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
             this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
-            this.votingBalance = (await (0, api_1.stakeOf)(this.state, this.rpcWallet.account.address)).toNumber();
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -678,6 +681,9 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             }
             this.btnStart.enabled = !!(((_g = this.fromTokenInput) === null || _g === void 0 ? void 0 : _g.token) && ((_h = this.toTokenInput) === null || _h === void 0 ? void 0 : _h.token));
         }
+        closeModal() {
+            this.mdAlert.visible = false;
+        }
         render() {
             return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
                 this.$render("i-label", { caption: "Get Ready to Create Pair" }),
@@ -692,6 +698,14 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
                 this.$render("i-hstack", { horizontalAlignment: 'center' },
                     this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart })),
+                this.$render("i-modal", { id: "mdAlert", maxWidth: "400px" },
+                    this.$render("i-panel", { width: "100%", padding: { top: "1.5rem", bottom: "1.5rem", left: "1.5rem", right: "1.5rem" } },
+                        this.$render("i-vstack", { horizontalAlignment: "center", gap: "1.75rem" },
+                            this.$render("i-icon", { width: 55, height: 55, name: "exclamation", fill: Theme.colors.warning.main, padding: { top: "0.6rem", bottom: "0.6rem", left: "0.6rem", right: "0.6rem" }, border: { width: 2, style: 'solid', color: Theme.colors.warning.main, radius: '50%' } }),
+                            this.$render("i-vstack", { class: "text-center", horizontalAlignment: "center", gap: "0.75rem", lineHeight: 1.5 },
+                                this.$render("i-label", { caption: "Insufficient Voting Balance", font: { size: '1.25rem', bold: true } })),
+                            this.$render("i-hstack", { verticalAlignment: 'center', gap: "0.5rem" },
+                                this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Cancel", font: { color: Theme.colors.secondary.contrastText }, background: { color: Theme.colors.secondary.main }, onClick: this.closeModal.bind(this) }))))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
         }
     };
