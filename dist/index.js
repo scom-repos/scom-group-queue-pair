@@ -509,13 +509,18 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                 this.executionProperties.toToken = toToken;
                 if (isPairExisted) {
                     if (this.state.handleJumpToStep) {
-                        this.state.handleJumpToStep({
-                            widgetName: 'scom-liquidity-provider',
-                            executionProperties: {
-                                tokenIn: fromToken,
-                                tokenOut: toToken,
-                                isCreate: true,
-                                isFlow: true
+                        this.alert({
+                            content: "This pair is already created in the Group Queues.",
+                            onClose: () => {
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-liquidity-provider',
+                                    executionProperties: {
+                                        tokenIn: fromToken,
+                                        tokenOut: toToken,
+                                        isCreate: true,
+                                        isFlow: true
+                                    }
+                                });
                             }
                         });
                     }
@@ -525,38 +530,46 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.btnStart.rightIcon.visible = true;
                     const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, fromPairToken, toPairToken);
                     if (isSupported) {
-                        if (this.state.handleNextFlowStep)
+                        if (this.state.handleNextFlowStep) {
                             this.state.handleNextFlowStep({
                                 tokenRequirements: this.tokenRequirements,
                                 executionProperties: this.executionProperties
                             });
+                        }
                     }
                     else {
                         if (this.state.handleJumpToStep) {
                             const votingBalance = (await (0, api_1.stakeOf)(this.state, this.rpcWallet.account.address)).toNumber();
                             if (votingBalance < this.minThreshold) {
                                 let value = (this.minThreshold - votingBalance).toString();
-                                this.mdAlert.onClose = () => {
-                                    this.state.handleJumpToStep({
-                                        widgetName: 'scom-governance-staking',
-                                        executionProperties: {
-                                            tokenInputValue: value,
-                                            action: "add",
-                                            fromToken: fromToken,
-                                            toToken: toToken,
-                                            isFlow: true
-                                        }
-                                    });
-                                };
-                                this.mdAlert.visible = true;
+                                this.alert({
+                                    title: "Insufficient Voting Balance",
+                                    onClose: () => {
+                                        this.state.handleJumpToStep({
+                                            widgetName: 'scom-governance-staking',
+                                            executionProperties: {
+                                                tokenInputValue: value,
+                                                action: "add",
+                                                fromToken: fromToken,
+                                                toToken: toToken,
+                                                isFlow: true
+                                            }
+                                        });
+                                    }
+                                });
                             }
                             else {
-                                this.state.handleJumpToStep({
-                                    widgetName: 'scom-governance-proposal',
-                                    executionProperties: {
-                                        fromToken: fromToken,
-                                        toToken: toToken,
-                                        isFlow: true
+                                this.alert({
+                                    content: "Pair is not registered in the Oracle, please create pair executive proposal.",
+                                    onClose: () => {
+                                        this.state.handleJumpToStep({
+                                            widgetName: 'scom-governance-proposal',
+                                            executionProperties: {
+                                                fromToken: fromToken,
+                                                toToken: toToken,
+                                                isFlow: true
+                                            }
+                                        });
                                     }
                                 });
                             }
@@ -684,6 +697,15 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         closeModal() {
             this.mdAlert.visible = false;
         }
+        alert(value) {
+            const { title, content, onClose } = value;
+            this.lblTitle.caption = title || "";
+            this.lblTitle.visible = !!title;
+            this.lblContent.caption = content || "";
+            this.lblContent.visible = !!content;
+            this.mdAlert.onClose = onClose;
+            this.mdAlert.visible = true;
+        }
         render() {
             return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
                 this.$render("i-label", { caption: "Get Ready to Create Pair" }),
@@ -703,7 +725,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                         this.$render("i-vstack", { horizontalAlignment: "center", gap: "1.75rem" },
                             this.$render("i-icon", { width: 55, height: 55, name: "exclamation", fill: Theme.colors.warning.main, padding: { top: "0.6rem", bottom: "0.6rem", left: "0.6rem", right: "0.6rem" }, border: { width: 2, style: 'solid', color: Theme.colors.warning.main, radius: '50%' } }),
                             this.$render("i-vstack", { class: "text-center", horizontalAlignment: "center", gap: "0.75rem", lineHeight: 1.5 },
-                                this.$render("i-label", { caption: "Insufficient Voting Balance", font: { size: '1.25rem', bold: true } })),
+                                this.$render("i-label", { id: "lblTitle", font: { size: '1.25rem', bold: true }, visible: false }),
+                                this.$render("i-label", { id: "lblContent", overflowWrap: 'anywhere', visible: false })),
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "0.5rem" },
                                 this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Cancel", font: { color: Theme.colors.secondary.contrastText }, background: { color: Theme.colors.secondary.main }, onClick: this.closeModal.bind(this) }))))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));

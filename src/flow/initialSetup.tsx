@@ -38,6 +38,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private toTokenInput: ScomTokenInput;
     private btnStart: Button;
     private mdAlert: Modal;
+    private lblTitle: Label;
+    private lblContent: Label;
     private mdWallet: ScomWalletModal;
     private _state: State;
     private tokenRequirements: any;
@@ -157,7 +159,16 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
     private closeModal() {
-      this.mdAlert.visible = false;
+        this.mdAlert.visible = false;
+    }
+    private alert(value: { title?: string, content?: string, onClose?: any }) {
+        const { title, content, onClose } = value;
+        this.lblTitle.caption = title || "";
+        this.lblTitle.visible = !!title;
+        this.lblContent.caption = content || "";
+        this.lblContent.visible = !!content;
+        this.mdAlert.onClose = onClose;
+        this.mdAlert.visible = true;
     }
     private handleClickStart = async () => {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
@@ -171,13 +182,18 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.executionProperties.toToken = toToken;
         if (isPairExisted) {
             if (this.state.handleJumpToStep) {
-                this.state.handleJumpToStep({
-                    widgetName: 'scom-liquidity-provider',
-                    executionProperties: {
-                        tokenIn: fromToken,
-                        tokenOut: toToken,
-                        isCreate: true,
-                        isFlow: true
+                this.alert({
+                    content: "This pair is already created in the Group Queues.",
+                    onClose: () => {
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-liquidity-provider',
+                            executionProperties: {
+                                tokenIn: fromToken,
+                                tokenOut: toToken,
+                                isCreate: true,
+                                isFlow: true
+                            }
+                        })
                     }
                 })
             }
@@ -186,36 +202,44 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
             this.btnStart.rightIcon.visible = true;
             const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
             if (isSupported) {
-                if (this.state.handleNextFlowStep)
+                if (this.state.handleNextFlowStep) {
                     this.state.handleNextFlowStep({
                         tokenRequirements: this.tokenRequirements,
                         executionProperties: this.executionProperties
                     });
+                }
             } else {
                 if (this.state.handleJumpToStep) {
                     const votingBalance = (await stakeOf(this.state, this.rpcWallet.account.address)).toNumber();
                     if (votingBalance < this.minThreshold) {
                         let value = (this.minThreshold - votingBalance).toString();
-                        this.mdAlert.onClose = () => {
-                            this.state.handleJumpToStep({
-                                widgetName: 'scom-governance-staking',
-                                executionProperties: {
-                                    tokenInputValue: value,
-                                    action: "add",
-                                    fromToken: fromToken,
-                                    toToken: toToken,
-                                    isFlow: true
-                                }
-                            });
-                        }
-                        this.mdAlert.visible = true;
+                        this.alert({
+                            title: "Insufficient Voting Balance",
+                            onClose: () => {
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-staking',
+                                    executionProperties: {
+                                        tokenInputValue: value,
+                                        action: "add",
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        isFlow: true
+                                    }
+                                });
+                            }
+                        })
                     } else {
-                        this.state.handleJumpToStep({
-                            widgetName: 'scom-governance-proposal',
-                            executionProperties: {
-                                fromToken: fromToken,
-                                toToken: toToken,
-                                isFlow: true
+                        this.alert({
+                            content: "Pair is not registered in the Oracle, please create pair executive proposal.",
+                            onClose: () => {
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-proposal',
+                                    executionProperties: {
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        isFlow: true
+                                    }
+                                })
                             }
                         })
                     }
@@ -288,7 +312,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                 border={{ width: 2, style: 'solid', color: Theme.colors.warning.main, radius: '50%' }}
                             ></i-icon>
                             <i-vstack class="text-center" horizontalAlignment="center" gap="0.75rem" lineHeight={1.5}>
-                                <i-label caption="Insufficient Voting Balance" font={{ size: '1.25rem', bold: true }}></i-label>
+                                <i-label id="lblTitle" font={{ size: '1.25rem', bold: true }} visible={false}></i-label>
+                                <i-label id="lblContent" overflowWrap='anywhere' visible={false}></i-label>
                             </i-vstack>
                             <i-hstack verticalAlignment='center' gap="0.5rem">
                                 <i-button

@@ -185,6 +185,8 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private toTokenInput;
         private btnStart;
         private mdAlert;
+        private lblTitle;
+        private lblContent;
         private mdWallet;
         private _state;
         private tokenRequirements;
@@ -211,6 +213,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private onSelectToToken;
         private handleSelectToken;
         private closeModal;
+        private alert;
         private handleClickStart;
         render(): any;
     }
