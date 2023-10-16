@@ -482,14 +482,15 @@ export default class ScomGroupQueuePair extends Module {
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                 const transactionsInfoArr = [
                     {
-                        desc: `Create Pair ${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`,
+                        desc: 'Create Pair',
                         chainId: chainId,
                         fromToken: null,
                         toToken: null,
                         fromTokenAmount: '',
                         toTokenAmount: '-',
                         hash: receipt.transactionHash,
-                        timestamp
+                        timestamp,
+                        value: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
                     }
                 ];
                 this.state.handleAddTransactions({
