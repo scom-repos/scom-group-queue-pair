@@ -552,7 +552,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                                                 action: "add",
                                                 fromToken: fromToken,
                                                 toToken: toToken,
-                                                isFlow: true
+                                                isFlow: true,
+                                                prevStep: 'scom-group-queue-pair'
                                             }
                                         });
                                     }

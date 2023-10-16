@@ -223,7 +223,8 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                         action: "add",
                                         fromToken: fromToken,
                                         toToken: toToken,
-                                        isFlow: true
+                                        isFlow: true,
+                                        prevStep: 'scom-group-queue-pair'
                                     }
                                 });
                             }
