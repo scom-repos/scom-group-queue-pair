@@ -729,7 +729,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                                 this.$render("i-label", { id: "lblTitle", font: { size: '1.25rem', bold: true }, visible: false }),
                                 this.$render("i-label", { id: "lblContent", overflowWrap: 'anywhere', visible: false })),
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "0.5rem" },
-                                this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Cancel", font: { color: Theme.colors.secondary.contrastText }, background: { color: Theme.colors.secondary.main }, onClick: this.closeModal.bind(this) }))))),
+                                this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Ok", font: { color: Theme.colors.secondary.contrastText }, background: { color: Theme.colors.secondary.main }, onClick: this.closeModal.bind(this) }))))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
         }
     };

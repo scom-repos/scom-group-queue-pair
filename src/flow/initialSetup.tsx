@@ -319,7 +319,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                             <i-hstack verticalAlignment='center' gap="0.5rem">
                                 <i-button
                                     padding={{ top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }}
-                                    caption="Cancel"
+                                    caption="Ok"
                                     font={{ color: Theme.colors.secondary.contrastText }}
                                     background={{ color: Theme.colors.secondary.main }}
                                     onClick={this.closeModal.bind(this)}
