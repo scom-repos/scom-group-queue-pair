@@ -416,7 +416,7 @@ export default class ScomGroupQueuePair extends Module {
             this.isReadyToCreate = isSupported;
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
             if (!isSupported) {
-                this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the oracle.';
+                this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the Oracle.';
             }
             this.fromTokenInput.tokenReadOnly = false;
             this.toTokenInput.tokenReadOnly = false;
