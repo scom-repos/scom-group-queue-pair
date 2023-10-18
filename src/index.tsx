@@ -591,15 +591,7 @@ export default class ScomGroupQueuePair extends Module {
             target.appendChild(widget);
             await widget.ready();
             widget.state = this.state;
-			let properties = options.properties;
-			let tokenRequirements = options.tokenRequirements;
-            this.state.handleNextFlowStep = options.onNextStep;
-            this.state.handleAddTransactions = options.onAddTransactions;
-            this.state.handleJumpToStep = options.onJumpToStep;
-			await widget.setData({ 
-				executionProperties: properties, 
-				tokenRequirements
-			});
+            await widget.handleFlowStage(target, stage, options);
         } else {
             widget = this;
             if (!options.isWidgetConnected) {
