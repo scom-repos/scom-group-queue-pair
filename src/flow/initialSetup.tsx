@@ -1,6 +1,7 @@
 import {
     application,
     Button,
+    Control,
     ControlElement,
     customElements,
     Label,
@@ -47,6 +48,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private walletEvents: IEventBusRegistry[] = [];
     private _pairs: Pair[];
     private minThreshold: number = 0;
+    private isPairReady: boolean = false;
 
     get state(): State {
         return this._state;
@@ -72,7 +74,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     async setData(value: any) {
         this.executionProperties = value.executionProperties;
         this.tokenRequirements = value.tokenRequirements;
-        this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
+        this.btnStart.enabled = false;
         await this.resetRpcWallet();
         await this.initializeWidgetConfig();
     }
@@ -94,8 +96,10 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.fromTokenInput.tokenDataListProp = tokens;
         this.toTokenInput.tokenDataListProp = tokens;
         this.pairs = await getGroupQueuePairs(this.state);
+        this.isPairReady = true;
         const paramValueObj = await getVotingValue(this.state, 'vote');
         this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
+        this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
@@ -156,7 +160,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 this.fromTokenInput.token = null;
             }
         }
-        this.btnStart.enabled = !!(this.fromTokenInput?.token && this.toTokenInput?.token);
+        this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
     private closeModal() {
         this.mdAlert.visible = false;
@@ -331,5 +335,20 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 <i-scom-wallet-modal id="mdWallet" wallets={[]} />
             </i-vstack>
         )
+    }
+    async handleFlowStage(target: Control, stage: string, options: any) {
+        let widget: ScomGroupQueuePairFlowInitialSetup = this;
+        if (!options.isWidgetConnected) {
+            let properties = options.properties;
+            let tokenRequirements = options.tokenRequirements;
+            this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
+            await this.setData({ 
+                executionProperties: properties, 
+                tokenRequirements
+            });
+        }
+        return { widget }
     }
 }

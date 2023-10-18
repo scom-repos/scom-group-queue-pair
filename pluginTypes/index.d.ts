@@ -166,7 +166,7 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
-    import { ControlElement, Module } from "@ijstech/components";
+    import { Control, ControlElement, Module } from "@ijstech/components";
     import { State } from "@scom/scom-group-queue-pair/store/index.ts";
     interface ScomGroupQueuePairFlowInitialSetupElement extends ControlElement {
         data?: any;
@@ -194,6 +194,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private walletEvents;
         private _pairs;
         private minThreshold;
+        private isPairReady;
         get state(): State;
         set state(value: State);
         private get rpcWallet();
@@ -216,6 +217,9 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private alert;
         private handleClickStart;
         render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: ScomGroupQueuePairFlowInitialSetup;
+        }>;
     }
 }
 /// <amd-module name="@scom/scom-group-queue-pair" />

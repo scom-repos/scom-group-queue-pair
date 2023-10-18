@@ -495,6 +495,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             super(...arguments);
             this.walletEvents = [];
             this.minThreshold = 0;
+            this.isPairReady = false;
             this.handleClickStart = async () => {
                 var _a, _b, _c, _d;
                 if (!this.fromTokenInput.token || !this.toTokenInput.token)
@@ -603,10 +604,9 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             await this.state.initRpcWallet(this.chainId);
         }
         async setData(value) {
-            var _a, _b;
             this.executionProperties = value.executionProperties;
             this.tokenRequirements = value.tokenRequirements;
-            this.btnStart.enabled = !!(((_a = this.fromTokenInput) === null || _a === void 0 ? void 0 : _a.token) && ((_b = this.toTokenInput) === null || _b === void 0 ? void 0 : _b.token));
+            this.btnStart.enabled = false;
             await this.resetRpcWallet();
             await this.initializeWidgetConfig();
         }
@@ -620,6 +620,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             }
         }
         async initializeWidgetConfig() {
+            var _a, _b;
             const connected = (0, index_1.isClientWalletConnected)();
             this.updateConnectStatus(connected);
             await this.initWallet();
@@ -629,8 +630,10 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
             this.pairs = await (0, api_1.getGroupQueuePairs)(this.state);
+            this.isPairReady = true;
             const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
             this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
+            this.btnStart.enabled = this.isPairReady && !!(((_a = this.fromTokenInput) === null || _a === void 0 ? void 0 : _a.token) && ((_b = this.toTokenInput) === null || _b === void 0 ? void 0 : _b.token));
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -693,7 +696,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.fromTokenInput.token = null;
                 }
             }
-            this.btnStart.enabled = !!(((_g = this.fromTokenInput) === null || _g === void 0 ? void 0 : _g.token) && ((_h = this.toTokenInput) === null || _h === void 0 ? void 0 : _h.token));
+            this.btnStart.enabled = this.isPairReady && !!(((_g = this.fromTokenInput) === null || _g === void 0 ? void 0 : _g.token) && ((_h = this.toTokenInput) === null || _h === void 0 ? void 0 : _h.token));
         }
         closeModal() {
             this.mdAlert.visible = false;
@@ -731,6 +734,21 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "0.5rem" },
                                 this.$render("i-button", { padding: { top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }, caption: "Ok", font: { color: Theme.colors.secondary.contrastText }, background: { color: Theme.colors.secondary.main }, onClick: this.closeModal.bind(this) }))))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
+        }
+        async handleFlowStage(target, stage, options) {
+            let widget = this;
+            if (!options.isWidgetConnected) {
+                let properties = options.properties;
+                let tokenRequirements = options.tokenRequirements;
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
+                await this.setData({
+                    executionProperties: properties,
+                    tokenRequirements
+                });
+            }
+            return { widget };
         }
     };
     ScomGroupQueuePairFlowInitialSetup = __decorate([
@@ -1088,7 +1106,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.selectToken(token, false);
         }
         async selectToken(token, isFrom) {
-            var _a, _b, _c, _d, _e, _f, _g;
+            var _a, _b, _c, _d, _e, _f, _g, _h;
             this.isReadyToCreate = false;
             const targetToken = (_a = (token.address || token.symbol)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
             let fromToken = (_d = (((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.address) || ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.symbol))) === null || _d === void 0 ? void 0 : _d.toLowerCase();
@@ -1114,7 +1132,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.isReadyToCreate = false;
                 return;
             }
-            const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
+            const isPairExisted = ((_h = this.pairs) === null || _h === void 0 ? void 0 : _h.length) && this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
             if (isPairExisted) {
                 this.pnlInfo.visible = true;
                 this.msgCreatePair.visible = true;
@@ -1249,8 +1267,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             }
             else {
                 widget = this;
-                target.appendChild(widget);
-                await widget.ready();
+                if (!options.isWidgetConnected) {
+                    target.appendChild(widget);
+                    await widget.ready();
+                }
                 let properties = options.properties;
                 let tag = options.tag;
                 this.state.handleNextFlowStep = options.onNextStep;

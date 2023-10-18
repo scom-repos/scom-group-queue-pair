@@ -399,7 +399,7 @@ export default class ScomGroupQueuePair extends Module {
             this.isReadyToCreate = false;
             return;
         }
-        const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
+        const isPairExisted = this.pairs?.length && this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
         if (isPairExisted) {
             this.pnlInfo.visible = true;
             this.msgCreatePair.visible = true;
@@ -602,8 +602,10 @@ export default class ScomGroupQueuePair extends Module {
 			});
         } else {
             widget = this;
-            target.appendChild(widget);
-            await widget.ready();
+            if (!options.isWidgetConnected) {
+                target.appendChild(widget);
+                await widget.ready();
+            }
 			let properties = options.properties;
 			let tag = options.tag;
             this.state.handleNextFlowStep = options.onNextStep;
