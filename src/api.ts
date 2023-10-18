@@ -1,4 +1,4 @@
-import { BigNumber, TransactionReceipt, Utils, Wallet } from "@ijstech/eth-wallet"
+import { BigNumber, IMulticallContractCall, TransactionReceipt, Utils, Wallet } from "@ijstech/eth-wallet"
 import { Contracts } from '@scom/oswap-openswap-contract';
 import { ChainNativeTokenByChainId } from "@scom/scom-token-list";
 import { Pair } from "./interface";
@@ -57,17 +57,39 @@ export async function getGroupQueuePairs(state: State) {
 
     const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
     let allPairsLength = (await factoryContract.allPairsLength()).toNumber();
-    let tasks: Promise<void>[] = [];
+    let factoryCalls: IMulticallContractCall[] = [];
     for (let i = 0; i < allPairsLength; i++) {
-        tasks.push((async () => {
-            let pairAddress = await factoryContract.allPairs(i);
-            let groupPair = new Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
-            let token0Address = await groupPair.token0();
-            let token1Address = await groupPair.token1();
-            addPair(token0Address, token1Address);
-        })());
+        factoryCalls.push({
+            contract: factoryContract,
+            methodName: 'allPairs',
+            params: [i.toString()],
+            to: factoryAddress
+        });
     }
-    await Promise.all(tasks);
+    let restrictedPairAddresses = await wallet.doMulticall(factoryCalls);
+    let restrictedPairCalls: IMulticallContractCall[] = [];
+    for (let i = 0; i < restrictedPairAddresses.length; i++) {
+      let pairAddress = restrictedPairAddresses[i];
+      let restrictedPair = new Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
+      restrictedPairCalls.push({
+        contract: restrictedPair,
+        methodName: 'token0',
+        params: [],
+        to: pairAddress
+      });
+      restrictedPairCalls.push({
+        contract: restrictedPair,
+        methodName: 'token1',
+        params: [],
+        to: pairAddress
+      }); 
+    }
+    let restrictedPairCallResults = await wallet.doMulticall(restrictedPairCalls);
+    for (let i = 0; i < restrictedPairAddresses.length; i++) {
+      let token0Address = restrictedPairCallResults[i * 2];
+      let token1Address = restrictedPairCallResults[i * 2 + 1];
+      addPair(token0Address, token1Address);
+    }
 
     return pairs
 }

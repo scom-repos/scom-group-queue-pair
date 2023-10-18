@@ -85,8 +85,7 @@ define("@scom/scom-group-queue-pair/formSchema.ts", ["require", "exports", "@sco
                         return networkPicker;
                     },
                     getData: (control) => {
-                        var _a;
-                        return (_a = control.selectedNetwork) === null || _a === void 0 ? void 0 : _a.chainId;
+                        return control.selectedNetwork?.chainId;
                     },
                     setData: (control, value) => {
                         control.setNetworkByChainId(value);
@@ -172,17 +171,16 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
             }
         }
         initRpcWallet(defaultChainId) {
-            var _a, _b, _c;
             if (this.rpcWalletId) {
                 return this.rpcWalletId;
             }
             const clientWallet = eth_wallet_1.Wallet.getClientInstance();
-            const networkList = Object.values(((_a = components_2.application.store) === null || _a === void 0 ? void 0 : _a.networkMap) || []);
+            const networkList = Object.values(components_2.application.store?.networkMap || []);
             const instanceId = clientWallet.initRpcWallet({
                 networks: networkList,
                 defaultChainId,
-                infuraId: (_b = components_2.application.store) === null || _b === void 0 ? void 0 : _b.infuraId,
-                multicalls: (_c = components_2.application.store) === null || _c === void 0 ? void 0 : _c.multicalls
+                infuraId: components_2.application.store?.infuraId,
+                multicalls: components_2.application.store?.multicalls
             });
             this.rpcWalletId = instanceId;
             if (clientWallet.address) {
@@ -196,11 +194,11 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
         }
         isRpcWalletConnected() {
             const wallet = this.getRpcWallet();
-            return wallet === null || wallet === void 0 ? void 0 : wallet.isConnected;
+            return wallet?.isConnected;
         }
         getChainId() {
             const rpcWallet = this.getRpcWallet();
-            return rpcWallet === null || rpcWallet === void 0 ? void 0 : rpcWallet.chainId;
+            return rpcWallet?.chainId;
         }
         setNetworkList(networkList, infuraId) {
             const wallet = eth_wallet_1.Wallet.getClientInstance();
@@ -219,7 +217,10 @@ define("@scom/scom-group-queue-pair/store/utils.ts", ["require", "exports", "@ij
                         network.rpcUrls[i] = network.rpcUrls[i].replace(/{InfuraId}/g, infuraId);
                     }
                 }
-                this.networkMap[network.chainId] = Object.assign(Object.assign({}, networkInfo), network);
+                this.networkMap[network.chainId] = {
+                    ...networkInfo,
+                    ...network
+                };
                 wallet.setNetworkInfo(this.networkMap[network.chainId]);
             }
         }
@@ -437,26 +438,47 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         };
         const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
         let allPairsLength = (await factoryContract.allPairsLength()).toNumber();
-        let tasks = [];
+        let factoryCalls = [];
         for (let i = 0; i < allPairsLength; i++) {
-            tasks.push((async () => {
-                let pairAddress = await factoryContract.allPairs(i);
-                let groupPair = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
-                let token0Address = await groupPair.token0();
-                let token1Address = await groupPair.token1();
-                addPair(token0Address, token1Address);
-            })());
+            factoryCalls.push({
+                contract: factoryContract,
+                methodName: 'allPairs',
+                params: [i.toString()],
+                to: factoryAddress
+            });
         }
-        await Promise.all(tasks);
+        let restrictedPairAddresses = await wallet.doMulticall(factoryCalls);
+        let restrictedPairCalls = [];
+        for (let i = 0; i < restrictedPairAddresses.length; i++) {
+            let pairAddress = restrictedPairAddresses[i];
+            let restrictedPair = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
+            restrictedPairCalls.push({
+                contract: restrictedPair,
+                methodName: 'token0',
+                params: [],
+                to: pairAddress
+            });
+            restrictedPairCalls.push({
+                contract: restrictedPair,
+                methodName: 'token1',
+                params: [],
+                to: pairAddress
+            });
+        }
+        let restrictedPairCallResults = await wallet.doMulticall(restrictedPairCalls);
+        for (let i = 0; i < restrictedPairAddresses.length; i++) {
+            let token0Address = restrictedPairCallResults[i * 2];
+            let token1Address = restrictedPairCallResults[i * 2 + 1];
+            addPair(token0Address, token1Address);
+        }
         return pairs;
     }
     exports.getGroupQueuePairs = getGroupQueuePairs;
     async function getVotingValue(state, param1) {
-        var _a;
         let result = {};
         const wallet = state.getRpcWallet();
         const chainId = state.getChainId();
-        const address = (_a = state.getAddresses(chainId)) === null || _a === void 0 ? void 0 : _a.OAXDEX_Governance;
+        const address = state.getAddresses(chainId)?.OAXDEX_Governance;
         if (address) {
             const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, address);
             const params = await govContract.getVotingParams(eth_wallet_2.Utils.stringToBytes32(param1));
@@ -497,13 +519,12 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.minThreshold = 0;
             this.isPairReady = false;
             this.handleClickStart = async () => {
-                var _a, _b, _c, _d;
                 if (!this.fromTokenInput.token || !this.toTokenInput.token)
                     return;
-                const fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
-                const toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
-                const fromPairToken = fromToken === null || fromToken === void 0 ? void 0 : fromToken.toLowerCase();
-                const toPairToken = toToken === null || toToken === void 0 ? void 0 : toToken.toLowerCase();
+                const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
+                const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
+                const fromPairToken = fromToken?.toLowerCase();
+                const toPairToken = toToken?.toLowerCase();
                 const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
                 this.executionProperties.isFlow = true;
                 this.executionProperties.fromToken = fromToken;
@@ -620,7 +641,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             }
         }
         async initializeWidgetConfig() {
-            var _a, _b;
             const connected = (0, index_1.isClientWalletConnected)();
             this.updateConnectStatus(connected);
             await this.initWallet();
@@ -633,7 +653,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.isPairReady = true;
             const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
             this.minThreshold = paramValueObj.minOaxTokenToCreateVote;
-            this.btnStart.enabled = this.isPairReady && !!(((_a = this.fromTokenInput) === null || _a === void 0 ? void 0 : _a.token) && ((_b = this.toTokenInput) === null || _b === void 0 ? void 0 : _b.token));
+            this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -685,9 +705,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.handleSelectToken(false);
         }
         handleSelectToken(isFrom) {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
-            let fromToken = (_c = (((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol))) === null || _c === void 0 ? void 0 : _c.toLowerCase();
-            let toToken = (_f = (((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.address) || ((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.symbol))) === null || _f === void 0 ? void 0 : _f.toLowerCase();
+            let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
+            let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
             if (fromToken && toToken && fromToken === toToken) {
                 if (isFrom) {
                     this.toTokenInput.token = null;
@@ -696,7 +715,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.fromTokenInput.token = null;
                 }
             }
-            this.btnStart.enabled = this.isPairReady && !!(((_g = this.fromTokenInput) === null || _g === void 0 ? void 0 : _g.token) && ((_h = this.toTokenInput) === null || _h === void 0 ? void 0 : _h.token));
+            this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
         }
         closeModal() {
             this.mdAlert.visible = false;
@@ -771,22 +790,19 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this._data.defaultChainId = value;
         }
         get wallets() {
-            var _a;
-            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
+            return this._data.wallets ?? [];
         }
         set wallets(value) {
             this._data.wallets = value;
         }
         get networks() {
-            var _a;
-            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
+            return this._data.networks ?? [];
         }
         set networks(value) {
             this._data.networks = value;
         }
         get showHeader() {
-            var _a;
-            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
+            return this._data.showHeader ?? true;
         }
         set showHeader(value) {
             this._data.showHeader = value;
@@ -865,7 +881,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 else {
                     params.content = content;
                 }
-                this.txStatusModal.message = Object.assign({}, params);
+                this.txStatusModal.message = { ...params };
                 this.txStatusModal.showModal();
             };
             this.connectWallet = async () => {
@@ -941,10 +957,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                                 this._data.defaultChainId = this._data.networks[0].chainId;
                                 this.resetRpcWallet();
                                 this.refreshUI();
-                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                if (builder?.setData)
                                     builder.setData(this._data);
                                 oldTag = JSON.parse(JSON.stringify(this.tag));
-                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
+                                if (builder?.setTag)
                                     builder.setTag(themeSettings);
                                 else
                                     this.setTag(themeSettings);
@@ -954,10 +970,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             undo: () => {
                                 this._data = JSON.parse(JSON.stringify(oldData));
                                 this.refreshUI();
-                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                if (builder?.setData)
                                     builder.setData(this._data);
                                 this.tag = JSON.parse(JSON.stringify(oldTag));
-                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
+                                if (builder?.setTag)
                                     builder.setTag(this.tag);
                                 else
                                     this.setTag(this.tag);
@@ -1010,7 +1026,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     getData: this.getData.bind(this),
                     setData: async (data) => {
                         const defaultData = data_json_1.default.defaultBuilderData;
-                        await this.setData(Object.assign(Object.assign({}, defaultData), data));
+                        await this.setData({ ...defaultData, ...data });
                     },
                     getTag: this.getTag.bind(this),
                     setTag: this.setTag.bind(this)
@@ -1019,12 +1035,13 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     name: 'Embedder Configurator',
                     target: 'Embedders',
                     getData: async () => {
-                        return Object.assign({}, this._data);
+                        return { ...this._data };
                     },
                     setData: async (properties, linkParams) => {
-                        var _a;
-                        let resultingData = Object.assign({}, properties);
-                        if (!properties.defaultChainId && ((_a = properties.networks) === null || _a === void 0 ? void 0 : _a.length)) {
+                        let resultingData = {
+                            ...properties
+                        };
+                        if (!properties.defaultChainId && properties.networks?.length) {
                             resultingData.defaultChainId = properties.networks[0].chainId;
                         }
                         await this.setData(resultingData);
@@ -1046,8 +1063,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             return this.tag;
         }
         updateTag(type, value) {
-            var _a;
-            this.tag[type] = (_a = this.tag[type]) !== null && _a !== void 0 ? _a : {};
+            this.tag[type] = this.tag[type] ?? {};
             for (let prop in value) {
                 if (value.hasOwnProperty(prop))
                     this.tag[type][prop] = value[prop];
@@ -1067,7 +1083,6 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.dappContainer.setTag(this.tag);
         }
         resetRpcWallet() {
-            var _a;
             this.removeRpcWalletEvents();
             const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
             const rpcWallet = this.state.getRpcWallet();
@@ -1093,7 +1108,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 showHeader: this.showHeader,
                 rpcWalletId: rpcWallet.instanceId
             };
-            if ((_a = this.dappContainer) === null || _a === void 0 ? void 0 : _a.setData)
+            if (this.dappContainer?.setData)
                 this.dappContainer.setData(data);
         }
         async refreshUI() {
@@ -1106,11 +1121,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.selectToken(token, false);
         }
         async selectToken(token, isFrom) {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
             this.isReadyToCreate = false;
-            const targetToken = (_a = (token.address || token.symbol)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
-            let fromToken = (_d = (((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.address) || ((_c = this.fromTokenInput.token) === null || _c === void 0 ? void 0 : _c.symbol))) === null || _d === void 0 ? void 0 : _d.toLowerCase();
-            let toToken = (_g = (((_e = this.toTokenInput.token) === null || _e === void 0 ? void 0 : _e.address) || ((_f = this.toTokenInput.token) === null || _f === void 0 ? void 0 : _f.symbol))) === null || _g === void 0 ? void 0 : _g.toLowerCase();
+            const targetToken = (token.address || token.symbol)?.toLowerCase();
+            let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
+            let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
             if (isFrom && targetToken === this.fromPairToken)
                 return;
             if (!isFrom && targetToken === this.toPairToken)
@@ -1132,7 +1146,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.isReadyToCreate = false;
                 return;
             }
-            const isPairExisted = ((_h = this.pairs) === null || _h === void 0 ? void 0 : _h.length) && this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
+            const isPairExisted = this.pairs?.length && this.pairs.some(pair => pair.fromToken.toLowerCase() === this.fromPairToken && pair.toToken.toLowerCase() === this.toPairToken);
             if (isPairExisted) {
                 this.pnlInfo.visible = true;
                 this.msgCreatePair.visible = true;
@@ -1160,7 +1174,6 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             }
         }
         async onCreatePair() {
-            var _a, _b, _c, _d;
             try {
                 if (!this.state.isRpcWalletConnected()) {
                     this.connectWallet();
@@ -1174,8 +1187,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.btnCreate.rightIcon.spin = true;
                 this.btnCreate.rightIcon.visible = true;
                 const chainId = this.chainId;
-                const fromToken = ((_a = this.fromTokenInput.token) === null || _a === void 0 ? void 0 : _a.address) || ((_b = this.fromTokenInput.token) === null || _b === void 0 ? void 0 : _b.symbol);
-                const toToken = ((_c = this.toTokenInput.token) === null || _c === void 0 ? void 0 : _c.address) || ((_d = this.toTokenInput.token) === null || _d === void 0 ? void 0 : _d.symbol);
+                const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
+                const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
                 const { receipt, error } = await (0, api_2.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
