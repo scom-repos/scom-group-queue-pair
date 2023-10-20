@@ -174,6 +174,14 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         this.mdAlert.onClose = onClose;
         this.mdAlert.visible = true;
     }
+    private updateStepStatus() {
+        if (this.state.handleUpdateStepStatus) {
+            this.state.handleUpdateStepStatus({
+                caption: "Completed",
+                color: Theme.colors.success.main
+            });
+        }
+    }
     private handleClickStart = async () => {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
         const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
@@ -189,6 +197,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 this.alert({
                     content: "This pair is already created in the Group Queues.",
                     onClose: () => {
+                        this.updateStepStatus();
                         this.state.handleJumpToStep({
                             widgetName: 'scom-liquidity-provider',
                             executionProperties: {
@@ -206,6 +215,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
             this.btnStart.rightIcon.visible = true;
             const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
             if (isSupported) {
+                this.updateStepStatus();
                 if (this.state.handleNextFlowStep) {
                     this.state.handleNextFlowStep({
                         tokenRequirements: this.tokenRequirements,
@@ -220,6 +230,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         this.alert({
                             title: "Insufficient Voting Balance",
                             onClose: () => {
+                                this.updateStepStatus();
                                 this.state.handleJumpToStep({
                                     widgetName: 'scom-governance-staking',
                                     executionProperties: {
@@ -237,6 +248,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         this.alert({
                             content: "Pair is not registered in the Oracle, please create pair executive proposal.",
                             onClose: () => {
+                                this.updateStepStatus();
                                 this.state.handleJumpToStep({
                                     widgetName: 'scom-governance-proposal',
                                     executionProperties: {
@@ -344,6 +356,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
             this.state.handleJumpToStep = options.onJumpToStep;
+            this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
             await this.setData({ 
                 executionProperties: properties, 
                 tokenRequirements

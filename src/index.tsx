@@ -496,16 +496,24 @@ export default class ScomGroupQueuePair extends Module {
                     list: transactionsInfoArr
                 });
             }
-            if (receipt && this.state.handleJumpToStep) {
-                this.state.handleJumpToStep({
-                    widgetName: 'scom-liquidity-provider',
-                    executionProperties: {
-                        tokenIn: fromToken,
-                        tokenOut: toToken,
-                        isCreate: true,
-                        isFlow: true
-                    }
-                })
+            if (receipt) {
+                if (this.state.handleUpdateStepStatus) {
+                    this.state.handleUpdateStepStatus({
+                        caption: "Completed",
+                        color: Theme.colors.success.main
+                    });
+                }
+                if (this.state.handleJumpToStep) {
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-liquidity-provider',
+                        executionProperties: {
+                            tokenIn: fromToken,
+                            tokenOut: toToken,
+                            isCreate: true,
+                            isFlow: true
+                        }
+                    })
+                }
             }
         } catch (error) {
             console.error(error);
@@ -611,6 +619,7 @@ export default class ScomGroupQueuePair extends Module {
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
             this.state.handleJumpToStep = options.onJumpToStep;
+            this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);

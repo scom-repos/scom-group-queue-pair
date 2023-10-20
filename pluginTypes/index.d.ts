@@ -96,6 +96,7 @@ declare module "@scom/scom-group-queue-pair/store/utils.ts" {
         handleNextFlowStep: (data: any) => Promise<void>;
         handleAddTransactions: (data: any) => Promise<void>;
         handleJumpToStep: (data: any) => Promise<void>;
+        handleUpdateStepStatus: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
@@ -210,6 +211,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private handleSelectToken;
         private closeModal;
         private alert;
+        private updateStepStatus;
         private handleClickStart;
         render(): any;
         handleFlowStage(target: Control, stage: string, options: any): Promise<{
