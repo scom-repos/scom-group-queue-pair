@@ -315,77 +315,6 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
         }
     };
 });
-define("@scom/scom-group-queue-pair/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.primaryButtonStyle = exports.tokenInputStyle = void 0;
-    const Theme = components_3.Styles.Theme.ThemeVars;
-    exports.tokenInputStyle = components_3.Styles.style({
-        width: 160,
-        $nest: {
-            '> * > *': {
-                margin: '0 !important',
-                padding: '0 !important'
-            },
-            '#gridTokenInput': {
-                height: 48,
-                padding: '0 !important',
-                transition: 'none'
-            },
-            '#btnToken': {
-                width: '100% !important',
-                fontSize: "1rem",
-                fontWeight: 700,
-                lineHeight: 1.5,
-                alignSelf: 'center',
-                justifyContent: 'space-between',
-                textAlign: 'center',
-                opacity: 1,
-                color: Theme.input.fontColor,
-                padding: '0.25rem 0.75rem !important'
-            },
-            '#pnlSelection': {
-                height: '100%'
-            },
-            '#pnlSelection > *': {
-                height: '100%'
-            },
-            '#mdCbToken': {
-                minWidth: '160px !important',
-                maxWidth: '160px !important',
-            },
-            '#mdCbToken .modal': {
-                minWidth: '160px !important'
-            },
-        }
-    });
-    exports.primaryButtonStyle = components_3.Styles.style({
-        fontSize: '1rem',
-        fontWeight: 600,
-        lineHeight: 1.5,
-        verticalAlign: 'middle',
-        background: Theme.background.gradient,
-        color: '#fff',
-        borderRadius: '0.65rem',
-        padding: '0.5rem 0.75rem',
-        transition: 'background .3s ease',
-        opacity: 1,
-        $nest: {
-            '&:not(.disabled):not(.is-spinning):hover': {
-                boxShadow: 'none',
-                opacity: .9
-            },
-            '&:not(.disabled):not(.is-spinning):focus': {
-                boxShadow: '0 0 0 0.2rem rgb(0 123 255 / 25%)',
-                opacity: .9
-            },
-            '&.disabled': {
-                opacity: 1,
-                color: '#fff',
-            },
-        }
-    });
-});
 define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -508,11 +437,11 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     }
     exports.stakeOf = stakeOf;
 });
-define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1, api_1) {
+define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_3, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_4.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_4.Module {
+    const Theme = components_3.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_3.Module {
         constructor() {
             super(...arguments);
             this.walletEvents = [];
@@ -658,7 +587,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
                 if (this.mdWallet) {
-                    await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
+                    await components_3.application.loadPackage('@scom/scom-wallet-modal', '*');
                     this.mdWallet.networks = this.executionProperties.networks;
                     this.mdWallet.wallets = this.executionProperties.wallets;
                     this.mdWallet.showModal();
@@ -771,15 +700,15 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
     };
     ScomGroupQueuePairFlowInitialSetup = __decorate([
-        (0, components_4.customElements)('i-scom-group-queue-pair-flow-initial-setup')
+        (0, components_3.customElements)('i-scom-group-queue-pair-flow-initial-setup')
     ], ScomGroupQueuePairFlowInitialSetup);
     exports.default = ScomGroupQueuePairFlowInitialSetup;
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/index.css.ts", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, index_css_1, api_2, initialSetup_1) {
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_4, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, api_2, initialSetup_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_5.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_5.Module {
+    const Theme = components_4.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_4.Module {
         get chainId() {
             return this.state.getChainId();
         }
@@ -887,7 +816,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.connectWallet = async () => {
                 if (!(0, index_2.isClientWalletConnected)()) {
                     if (this.mdWallet) {
-                        await components_5.application.loadPackage('@scom/scom-wallet-modal', '*');
+                        await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
                         this.mdWallet.networks = this.networks;
                         this.mdWallet.wallets = this.wallets;
                         this.mdWallet.showModal();
@@ -1250,14 +1179,14 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             this.$render("i-label", { caption: "Create a new Pair", font: { size: '1.25rem', weight: 700, color: Theme.colors.primary.main }, margin: { bottom: '2rem' } }),
                             this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: 360, horizontalAlignment: "center", margin: { left: 'auto', right: 'auto' }, gap: "1.5rem" },
                                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", wrap: 'wrap', gap: 10 },
-                                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectFromToken.bind(this) }),
+                                    this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectFromToken.bind(this) }),
                                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
-                                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", class: index_css_1.tokenInputStyle, isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
+                                    this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
                                 this.$render("i-vstack", { id: "pnlInfo", gap: "0.5rem", visible: false },
                                     this.$render("i-label", { id: "msgCreatePair", class: "text-center", visible: false }),
                                     this.$render("i-label", { id: "linkGov", class: "text-center", caption: " Go to Governance", visible: false, link: { href: 'https://www.openswap.xyz/#/governance', target: '_blank' } })),
                                 this.$render("i-hstack", { horizontalAlignment: "center", verticalAlignment: "center", margin: { top: "0.5rem" } },
-                                    this.$render("i-button", { id: "btnCreate", class: index_css_1.primaryButtonStyle, width: 150, caption: "Create", enabled: false, onClick: this.onCreatePair.bind(this) }))))),
+                                    this.$render("i-button", { id: "btnCreate", width: 150, caption: "Create", font: { size: '1rem', weight: 600, color: '#ffff' }, lineHeight: 1.5, background: { color: Theme.background.gradient }, padding: { top: '0.5rem', bottom: '0.5rem', left: '0.75rem', right: '0.75rem' }, border: { radius: '0.65rem' }, enabled: false, onClick: this.onCreatePair.bind(this) }))))),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));
         }
@@ -1290,7 +1219,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
     };
     ScomGroupQueuePair = __decorate([
-        (0, components_5.customElements)('i-scom-group-queue-pair')
+        (0, components_4.customElements)('i-scom-group-queue-pair')
     ], ScomGroupQueuePair);
     exports.default = ScomGroupQueuePair;
 });

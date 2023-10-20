@@ -138,11 +138,6 @@ declare module "@scom/scom-group-queue-pair/data.json.ts" {
     };
     export default _default_2;
 }
-/// <amd-module name="@scom/scom-group-queue-pair/index.css.ts" />
-declare module "@scom/scom-group-queue-pair/index.css.ts" {
-    export const tokenInputStyle: string;
-    export const primaryButtonStyle: string;
-}
 /// <amd-module name="@scom/scom-group-queue-pair/api.ts" />
 declare module "@scom/scom-group-queue-pair/api.ts" {
     import { BigNumber, TransactionReceipt } from "@ijstech/eth-wallet";

@@ -11,7 +11,6 @@ import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import ScomTokenInput from '@scom/scom-token-input';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
-import { primaryButtonStyle, tokenInputStyle } from './index.css';
 import { doCreatePair, getGroupQueuePairs, isGroupQueueOracleSupported } from './api';
 import ScomGroupQueuePairFlowInitialSetup from './flow/initialSetup';
 
@@ -542,7 +541,6 @@ export default class ScomGroupQueuePair extends Module {
                                     <i-scom-token-input
                                         id="fromTokenInput"
                                         type="combobox"
-                                        class={tokenInputStyle}
                                         isBalanceShown={false}
                                         isBtnMaxShown={false}
                                         isInputShown={false}
@@ -553,7 +551,6 @@ export default class ScomGroupQueuePair extends Module {
                                     <i-scom-token-input
                                         id="toTokenInput"
                                         type="combobox"
-                                        class={tokenInputStyle}
                                         isBalanceShown={false}
                                         isBtnMaxShown={false}
                                         isInputShown={false}
@@ -572,7 +569,18 @@ export default class ScomGroupQueuePair extends Module {
                                     ></i-label>
                                 </i-vstack>
                                 <i-hstack horizontalAlignment="center" verticalAlignment="center" margin={{ top: "0.5rem" }}>
-                                    <i-button id="btnCreate" class={primaryButtonStyle} width={150} caption="Create" enabled={false} onClick={this.onCreatePair.bind(this)}></i-button>
+                                    <i-button
+                                        id="btnCreate"
+                                        width={150}
+                                        caption="Create" 
+                                        font={{ size: '1rem', weight: 600, color: '#ffff' }}
+                                        lineHeight={1.5}
+                                        background={{ color: Theme.background.gradient }}
+                                        padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.75rem', right: '0.75rem' }}
+                                        border={{ radius: '0.65rem' }}
+                                        enabled={false}
+                                        onClick={this.onCreatePair.bind(this)}
+                                    ></i-button>
                                 </i-hstack>
                             </i-vstack>
                         </i-vstack>
