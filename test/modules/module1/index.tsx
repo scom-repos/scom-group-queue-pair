@@ -64,10 +64,22 @@ export default class Module1 extends Module {
                         defaultChainId={97}
                         networks={[
                             {
-                                "chainId": 43113
+                                "chainId": 56
                             },
                             {
                                 "chainId": 97
+                            },
+                            {
+                                "chainId": 43113
+                            },
+                            {
+                                "chainId": 43113
+                            },
+                            {
+                                "chainId": 42161
+                            },
+                            {
+                                "chainId": 421613
                             }
                         ]}
                         wallets={[
