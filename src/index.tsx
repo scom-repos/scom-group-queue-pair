@@ -477,30 +477,30 @@ export default class ScomGroupQueuePair extends Module {
                 this.fromPairToken = '';
                 this.toPairToken = '';
             }
-            if (this.state.handleAddTransactions && receipt) {
-                const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
-                const transactionsInfoArr = [
-                    {
-                        desc: 'Create Pair',
-                        chainId: chainId,
-                        fromToken: null,
-                        toToken: null,
-                        fromTokenAmount: '',
-                        toTokenAmount: '-',
-                        hash: receipt.transactionHash,
-                        timestamp,
-                        value: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
-                    }
-                ];
-                this.state.handleAddTransactions({
-                    list: transactionsInfoArr
-                });
-            }
             if (receipt) {
                 if (this.state.handleUpdateStepStatus) {
                     this.state.handleUpdateStepStatus({
                         caption: "Completed",
                         color: Theme.colors.success.main
+                    });
+                }
+                if (this.state.handleAddTransactions) {
+                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const transactionsInfoArr = [
+                        {
+                            desc: 'Create Pair',
+                            chainId: chainId,
+                            fromToken: null,
+                            toToken: null,
+                            fromTokenAmount: '',
+                            toTokenAmount: '-',
+                            hash: receipt.transactionHash,
+                            timestamp,
+                            value: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
+                        }
+                    ];
+                    this.state.handleAddTransactions({
+                        list: transactionsInfoArr
                     });
                 }
                 if (this.state.handleJumpToStep) {
