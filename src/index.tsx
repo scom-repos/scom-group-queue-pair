@@ -95,6 +95,10 @@ export default class ScomGroupQueuePair extends Module {
     set pairs(value: Pair[]) {
         this._pairs = value;
     }
+    
+    private get isFlow() {
+        return this._data.isFlow ?? false;
+    }
 
 	constructor(parent?: Container, options?: ControlElement) {
 		super(parent, options);
@@ -299,8 +303,8 @@ export default class ScomGroupQueuePair extends Module {
             this.fromTokenInput.tokenReadOnly = true;
             this.toTokenInput.tokenReadOnly = true;
             this.pairs = await getGroupQueuePairs(this.state);
-            this.fromTokenInput.tokenReadOnly = false;
-            this.toTokenInput.tokenReadOnly = false;
+            this.fromTokenInput.tokenReadOnly = this.isFlow;
+            this.toTokenInput.tokenReadOnly = this.isFlow;
             this.refreshUI();
         });
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
@@ -349,19 +353,19 @@ export default class ScomGroupQueuePair extends Module {
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
-            if (this._data.isFlow) {
+            if (this.isFlow) {
                 this.fromPairToken = this.toPairToken = "";
                 if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
                 if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
             }
-            if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
+            if (!this.pairs) {
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
                 this.pairs = await getGroupQueuePairs(this.state);
-                this.fromTokenInput.tokenReadOnly = false;
-                this.toTokenInput.tokenReadOnly = false;
+                this.fromTokenInput.tokenReadOnly = this.isFlow;
+                this.toTokenInput.tokenReadOnly = this.isFlow;
             }
-            if (this._data.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
+            if (this.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
                 this.selectToken(this.fromTokenInput.token, true);
             }
         })
@@ -409,16 +413,16 @@ export default class ScomGroupQueuePair extends Module {
             this.fromTokenInput.tokenReadOnly = true;
             this.toTokenInput.tokenReadOnly = true;
             const WETH9 = getWETH(this.chainId);
-            this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
-            this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
+            this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address;
+            this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address;
             const isSupported = await isGroupQueueOracleSupported(this.state, this.fromPairToken, this.toPairToken);
             this.isReadyToCreate = isSupported;
             this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;
             if (!isSupported) {
                 this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the Oracle.';
             }
-            this.fromTokenInput.tokenReadOnly = false;
-            this.toTokenInput.tokenReadOnly = false;
+            this.fromTokenInput.tokenReadOnly = this.isFlow;
+            this.toTokenInput.tokenReadOnly = this.isFlow;
         }
         if (isClientWalletConnected() && this.state.isRpcWalletConnected()) {
             this.btnCreate.enabled = this.isReadyToCreate;
@@ -518,8 +522,8 @@ export default class ScomGroupQueuePair extends Module {
         } catch (error) {
             console.error(error);
         } finally {
-            this.fromTokenInput.tokenReadOnly = false;
-            this.toTokenInput.tokenReadOnly = false;
+            this.fromTokenInput.tokenReadOnly = this.isFlow;
+            this.toTokenInput.tokenReadOnly = this.isFlow;
             this.btnCreate.rightIcon.spin = false;
             this.btnCreate.rightIcon.visible = false;
         }

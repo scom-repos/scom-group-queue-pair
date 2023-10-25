@@ -480,7 +480,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                 else {
                     this.btnStart.rightIcon.spin = true;
                     this.btnStart.rightIcon.visible = true;
-                    const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, fromPairToken, toPairToken);
+                    const WETH9 = (0, index_1.getWETH)(this.chainId);
+                    const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address, this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address);
                     if (isSupported) {
                         this.updateStepStatus();
                         if (this.state.handleNextFlowStep) {
@@ -755,6 +756,9 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         set pairs(value) {
             this._pairs = value;
         }
+        get isFlow() {
+            return this._data.isFlow ?? false;
+        }
         constructor(parent, options) {
             super(parent, options);
             this._data = {
@@ -794,21 +798,21 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     const tokens = scom_token_list_5.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
-                    if (this._data.isFlow) {
+                    if (this.isFlow) {
                         this.fromPairToken = this.toPairToken = "";
                         if (this._data.fromToken)
                             this.fromTokenInput.address = this._data.fromToken;
                         if (this._data.toToken)
                             this.toTokenInput.address = this._data.toToken;
                     }
-                    if (!this.pairs && !this.fromTokenInput.tokenReadOnly) {
+                    if (!this.pairs) {
                         this.fromTokenInput.tokenReadOnly = true;
                         this.toTokenInput.tokenReadOnly = true;
                         this.pairs = await (0, api_2.getGroupQueuePairs)(this.state);
-                        this.fromTokenInput.tokenReadOnly = false;
-                        this.toTokenInput.tokenReadOnly = false;
+                        this.fromTokenInput.tokenReadOnly = this.isFlow;
+                        this.toTokenInput.tokenReadOnly = this.isFlow;
                     }
-                    if (this._data.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
+                    if (this.isFlow && this.fromTokenInput.token && this.toTokenInput.token) {
                         this.selectToken(this.fromTokenInput.token, true);
                     }
                 });
@@ -1036,8 +1040,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
                 this.pairs = await (0, api_2.getGroupQueuePairs)(this.state);
-                this.fromTokenInput.tokenReadOnly = false;
-                this.toTokenInput.tokenReadOnly = false;
+                this.fromTokenInput.tokenReadOnly = this.isFlow;
+                this.toTokenInput.tokenReadOnly = this.isFlow;
                 this.refreshUI();
             });
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_4.Constants.RpcWalletEvent.Connected, async (connected) => {
@@ -1108,8 +1112,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 if (!isSupported) {
                     this.msgCreatePair.caption = 'Pair is not registered in the Oracle, please register the pair in the Oracle.';
                 }
-                this.fromTokenInput.tokenReadOnly = false;
-                this.toTokenInput.tokenReadOnly = false;
+                this.fromTokenInput.tokenReadOnly = this.isFlow;
+                this.toTokenInput.tokenReadOnly = this.isFlow;
             }
             if ((0, index_2.isClientWalletConnected)() && this.state.isRpcWalletConnected()) {
                 this.btnCreate.enabled = this.isReadyToCreate;
@@ -1182,8 +1186,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 console.error(error);
             }
             finally {
-                this.fromTokenInput.tokenReadOnly = false;
-                this.toTokenInput.tokenReadOnly = false;
+                this.fromTokenInput.tokenReadOnly = this.isFlow;
+                this.toTokenInput.tokenReadOnly = this.isFlow;
                 this.btnCreate.rightIcon.spin = false;
                 this.btnCreate.rightIcon.visible = false;
             }

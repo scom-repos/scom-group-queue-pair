@@ -13,7 +13,7 @@ import { Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
 import ScomTokenInput from "@scom/scom-token-input";
 import { ITokenObject, tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
-import { isClientWalletConnected, State } from "../store/index";
+import { getWETH, isClientWalletConnected, State } from "../store/index";
 import { Pair } from "../interface";
 import { getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, stakeOf } from "../api";
 
@@ -213,7 +213,12 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         } else {
             this.btnStart.rightIcon.spin = true;
             this.btnStart.rightIcon.visible = true;
-            const isSupported = await isGroupQueueOracleSupported(this.state, fromPairToken, toPairToken);
+            const WETH9 = getWETH(this.chainId);
+            const isSupported = await isGroupQueueOracleSupported(
+                this.state,
+                this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address,
+                this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address
+            );
             if (isSupported) {
                 this.updateStepStatus();
                 if (this.state.handleNextFlowStep) {

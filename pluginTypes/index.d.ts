@@ -268,6 +268,7 @@ declare module "@scom/scom-group-queue-pair" {
         set showHeader(value: boolean);
         get pairs(): Pair[];
         set pairs(value: Pair[]);
+        private get isFlow();
         constructor(parent?: Container, options?: ControlElement);
         removeRpcWalletEvents(): void;
         onHide(): void;
