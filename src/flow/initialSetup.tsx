@@ -162,7 +162,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         }
         this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
-    private closeModal() {
+    private closeAlertModal() {
         this.mdAlert.visible = false;
     }
     private alert(value: { title?: string, content?: string, onClose?: any }) {
@@ -338,7 +338,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                     caption="Ok"
                                     font={{ color: Theme.colors.secondary.contrastText }}
                                     background={{ color: Theme.colors.secondary.main }}
-                                    onClick={this.closeModal.bind(this)}
+                                    onClick={this.closeAlertModal.bind(this)}
                                 ></i-button>
                             </i-hstack>
                         </i-vstack>

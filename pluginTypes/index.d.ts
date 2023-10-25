@@ -209,7 +209,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private onSelectFromToken;
         private onSelectToToken;
         private handleSelectToken;
-        private closeModal;
+        private closeAlertModal;
         private alert;
         private updateStepStatus;
         private handleClickStart;
