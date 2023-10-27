@@ -149,6 +149,7 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export function doCreatePair(state: State, tokenA: string, tokenB: string): Promise<{
         receipt: TransactionReceipt | null;
+        pairAddress: string | null;
         error: Record<string, string> | null;
     }>;
     export function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string): Promise<boolean>;

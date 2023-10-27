@@ -331,6 +331,7 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
     async function doCreatePair(state, tokenA, tokenB) {
         let receipt = null;
+        let pairAddress;
         const wallet = eth_wallet_2.Wallet.getClientInstance();
         try {
             let token0;
@@ -346,11 +347,13 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
             let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
             const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
             receipt = await factoryContract.createPair({ tokenA: token0, tokenB: token1 });
+            let event = factoryContract.parsePairCreatedEvent(receipt)[0];
+            pairAddress = event.pair;
         }
         catch (error) {
-            return { receipt: null, error: error };
+            return { receipt: null, pairAddress, error: error };
         }
-        return { receipt, error: null };
+        return { receipt, pairAddress, error: null };
     }
     exports.doCreatePair = doCreatePair;
     async function isGroupQueueOracleSupported(state, tokenA, tokenB) {
@@ -1166,7 +1169,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 const chainId = this.chainId;
                 const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
                 const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
-                const { receipt, error } = await (0, api_2.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
+                const { receipt, pairAddress, error } = await (0, api_2.doCreatePair)(this.state, this.fromPairToken, this.toPairToken);
                 if (error) {
                     this.showResultMessage('error', error);
                 }
@@ -1201,9 +1204,10 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             list: transactionsInfoArr
                         });
                     }
+                    let isRegistered = await (0, api_2.isPairRegistered)(this.state, pairAddress);
                     if (this.state.handleJumpToStep) {
                         this.state.handleJumpToStep({
-                            widgetName: 'scom-liquidity-provider',
+                            widgetName: isRegistered ? 'scom-liquidity-provider' : 'scom-pair-registry',
                             executionProperties: {
                                 tokenIn: fromToken,
                                 tokenOut: toToken,

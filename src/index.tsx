@@ -11,7 +11,7 @@ import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import ScomTokenInput from '@scom/scom-token-input';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
-import { doCreatePair, getGroupQueuePairs, isGroupQueueOracleSupported } from './api';
+import { doCreatePair, getGroupQueuePairs, isGroupQueueOracleSupported, isPairRegistered } from './api';
 import ScomGroupQueuePairFlowInitialSetup from './flow/initialSetup';
 
 const Theme = Styles.Theme.ThemeVars;
@@ -474,7 +474,7 @@ export default class ScomGroupQueuePair extends Module {
             const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
             const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
 
-            const { receipt, error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
+            const { receipt, pairAddress, error } = await doCreatePair(this.state, this.fromPairToken, this.toPairToken);
             if (error) {
                 this.showResultMessage('error', error as any);
             } else {
@@ -508,9 +508,10 @@ export default class ScomGroupQueuePair extends Module {
                         list: transactionsInfoArr
                     });
                 }
+                let isRegistered = await isPairRegistered(this.state, pairAddress);
                 if (this.state.handleJumpToStep) {
                     this.state.handleJumpToStep({
-                        widgetName: 'scom-liquidity-provider',
+                        widgetName: isRegistered ? 'scom-liquidity-provider' : 'scom-pair-registry',
                         executionProperties: {
                             tokenIn: fromToken,
                             tokenOut: toToken,

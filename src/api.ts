@@ -9,9 +9,11 @@ export const nullAddress = "0x0000000000000000000000000000000000000000";
 
 export async function doCreatePair(state: State, tokenA: string, tokenB: string): Promise<{
     receipt: TransactionReceipt | null;
+    pairAddress: string | null;
     error: Record<string, string> | null;
 }> {
     let receipt: TransactionReceipt | null = null;
+    let pairAddress: string;
     const wallet: any = Wallet.getClientInstance();
     try {
         let token0: string
@@ -26,10 +28,12 @@ export async function doCreatePair(state: State, tokenA: string, tokenB: string)
         let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
         const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
         receipt = await factoryContract.createPair({ tokenA: token0, tokenB: token1 });
+        let event = factoryContract.parsePairCreatedEvent(receipt)[0];
+        pairAddress = event.pair;
     } catch (error) {
-        return { receipt: null, error: error as any };
+        return { receipt: null, pairAddress, error: error as any };
     }
-    return { receipt, error: null };
+    return { receipt, pairAddress, error: null };
 }
 
 export async function isGroupQueueOracleSupported(state: State, tokenA: string, tokenB: string) {
