@@ -12,6 +12,7 @@ export interface IGroupQueuePair {
 }
 
 export type Pair = {
+    address: string;
     fromToken: string
     toToken: string
 }

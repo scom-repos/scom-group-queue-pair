@@ -22,6 +22,7 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         isFlow?: boolean;
     }
     export type Pair = {
+        address: string;
         fromToken: string;
         toToken: string;
     };
@@ -78,6 +79,7 @@ declare module "@scom/scom-group-queue-pair/store/core.ts" {
         OAXDEX_Governance: string;
         GOV_TOKEN: string;
         OSWAP_RestrictedFactory: string;
+        OSWAP_HybridRouterRegistry: string;
     }
     export const coreAddress: {
         [chainId: number]: CoreAddress;
@@ -160,6 +162,7 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
     }>;
     export function stakeOf(state: State): Promise<BigNumber>;
     export function getFreezedStakeAmount(state: State): Promise<BigNumber>;
+    export function isPairRegistered(state: State, pairAddress: string): Promise<boolean>;
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {

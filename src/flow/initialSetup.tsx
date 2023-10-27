@@ -14,7 +14,7 @@ import { ITokenObject, tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
 import { getWETH, isClientWalletConnected, State } from "../store/index";
 import { Pair } from "../interface";
-import { getFreezedStakeAmount, getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, stakeOf } from "../api";
+import { getFreezedStakeAmount, getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, isPairRegistered, stakeOf } from "../api";
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -173,23 +173,36 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         const toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
         const fromPairToken = fromToken?.toLowerCase();
         const toPairToken = toToken?.toLowerCase();
-        const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+        const pair = this.pairs.find(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
         const strPair = `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`;
         this.executionProperties.isFlow = true;
         this.executionProperties.fromToken = fromToken;
         this.executionProperties.toToken = toToken;
-        if (isPairExisted) {
+        if (pair) {
             if (this.state.handleJumpToStep) {
-                this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
-                this.state.handleJumpToStep({
-                    widgetName: 'scom-liquidity-provider',
-                    executionProperties: {
-                        tokenIn: fromToken,
-                        tokenOut: toToken,
-                        isCreate: true,
-                        isFlow: true
-                    }
-                })
+                let isRegistered = await isPairRegistered(this.state, pair.address);
+                if (!isRegistered) {
+                    this.updateStepStatus(`Pair ${strPair} is not registered on Hybrid Router Registry`);
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-pair-registry',
+                        executionProperties: {
+                            tokenIn: fromToken,
+                            tokenOut: toToken,
+                            isFlow: true
+                        }
+                    });
+                } else {
+                    this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-liquidity-provider',
+                        executionProperties: {
+                            tokenIn: fromToken,
+                            tokenOut: toToken,
+                            isCreate: true,
+                            isFlow: true
+                        }
+                    });
+                }
             }
         } else {
             this.btnStart.rightIcon.spin = true;
@@ -214,7 +227,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     if (votingBalance.lt(this.minThreshold)) {
                         const freezeStakeAmount = await getFreezedStakeAmount(this.state);
                         if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
-                            this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                            this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                             this.state.handleJumpToStep({
                                 widgetName: 'scom-governance-unlock-staking',
                                 executionProperties: {
@@ -225,7 +238,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                             });
                         } else {
                             let value = new BigNumber(this.minThreshold).minus(votingBalance).toFixed();
-                            this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                            this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                             this.state.handleJumpToStep({
                                 widgetName: 'scom-governance-staking',
                                 executionProperties: {
@@ -238,7 +251,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                             });
                         }
                     } else {
-                        this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                        this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                         this.state.handleJumpToStep({
                             widgetName: 'scom-governance-proposal',
                             executionProperties: {

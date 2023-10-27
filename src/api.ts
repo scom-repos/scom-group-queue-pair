@@ -48,11 +48,11 @@ export async function getGroupQueuePairs(state: State) {
 
     let pairs: Pair[] = [];
 
-    const addPair = (token0Address: string, token1Address: string) => {
+    const addPair = (pairAddress: string, token0Address: string, token1Address: string) => {
         const token0 = token0Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token0Address.toLowerCase();
         const token1 = token1Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token1Address.toLowerCase();
-        pairs.push({ fromToken: token0, toToken: token1 });
-        pairs.push({ fromToken: token1, toToken: token0 });
+        pairs.push({ address: pairAddress, fromToken: token0, toToken: token1 });
+        pairs.push({ address: pairAddress, fromToken: token1, toToken: token0 });
     }
 
     const factoryContract = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
@@ -69,26 +69,27 @@ export async function getGroupQueuePairs(state: State) {
     let restrictedPairAddresses = await wallet.doMulticall(factoryCalls);
     let restrictedPairCalls: IMulticallContractCall[] = [];
     for (let i = 0; i < restrictedPairAddresses.length; i++) {
-      let pairAddress = restrictedPairAddresses[i];
-      let restrictedPair = new Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
-      restrictedPairCalls.push({
-        contract: restrictedPair,
-        methodName: 'token0',
-        params: [],
-        to: pairAddress
-      });
-      restrictedPairCalls.push({
-        contract: restrictedPair,
-        methodName: 'token1',
-        params: [],
-        to: pairAddress
-      }); 
+        let pairAddress = restrictedPairAddresses[i];
+        let restrictedPair = new Contracts.OSWAP_RestrictedPair(wallet, pairAddress);
+        restrictedPairCalls.push({
+            contract: restrictedPair,
+            methodName: 'token0',
+            params: [],
+            to: pairAddress
+        });
+        restrictedPairCalls.push({
+            contract: restrictedPair,
+            methodName: 'token1',
+            params: [],
+            to: pairAddress
+        });
     }
     let restrictedPairCallResults = await wallet.doMulticall(restrictedPairCalls);
     for (let i = 0; i < restrictedPairAddresses.length; i++) {
-      let token0Address = restrictedPairCallResults[i * 2];
-      let token1Address = restrictedPairCallResults[i * 2 + 1];
-      addPair(token0Address, token1Address);
+        let pairAddress = restrictedPairAddresses[i];
+        let token0Address = restrictedPairCallResults[i * 2];
+        let token1Address = restrictedPairCallResults[i * 2 + 1];
+        addPair(pairAddress, token0Address, token1Address);
     }
 
     return pairs
@@ -128,7 +129,7 @@ export async function stakeOf(state: State) {
         const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
         let stakeOf = await govContract.stakeOf(wallet.account.address);
         result = Utils.fromDecimals(stakeOf, state.getGovToken(chainId).decimals || 18);
-    } catch (err) {}
+    } catch (err) { }
     return result;
 }
 
@@ -141,6 +142,20 @@ export async function getFreezedStakeAmount(state: State) {
         const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
         let result = await govContract.freezedStake(wallet.account.address);
         amount = Utils.fromDecimals(result.amount, state.getGovToken(chainId).decimals || 18);
-    } catch (err) {}
+    } catch (err) { }
     return amount;
+}
+
+export async function isPairRegistered(state: State, pairAddress: string) {
+    let isRegistered = false;
+    try {
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const registry = new Contracts.OSWAP_HybridRouterRegistry(wallet, state.getAddresses(chainId).OSWAP_HybridRouterRegistry);
+        const { token0, token1 } = await registry.getPairTokens([pairAddress]);
+        isRegistered = token0.length > 0 && token1.length > 0;
+    } catch (err) {
+        console.error(err);
+    }
+    return isRegistered;
 }

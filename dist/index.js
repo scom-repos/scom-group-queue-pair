@@ -105,48 +105,56 @@ define("@scom/scom-group-queue-pair/store/core.ts", ["require", "exports"], func
             OAXDEX_Governance: "0x510a179AA399672e26e54Ed8Ce0e822cc9D0a98D",
             GOV_TOKEN: "0xb32aC3C79A94aC1eb258f3C830bBDbc676483c93",
             OSWAP_RestrictedFactory: "0x91d137464b93caC7E2c2d4444a9D8609E4473B70",
+            OSWAP_HybridRouterRegistry: "0xcc44c3617e46b2e946d61499ff8f4cda721ff178",
         },
         97: {
             WrappedNativeToken: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
             OAXDEX_Governance: "0xDfC070E2dbDAdcf892aE2ed2E2C426aDa835c528",
             GOV_TOKEN: "0x45eee762aaeA4e5ce317471BDa8782724972Ee19",
             OSWAP_RestrictedFactory: "0xa158FB71cA5EF59f707c6F8D0b9CC5765F97Fd60",
+            OSWAP_HybridRouterRegistry: "0x8e5Afed779B56888ca267284494f23aFe158EA0B",
         },
         137: {
             WrappedNativeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
             OAXDEX_Governance: "0x5580B68478e714C02850251353Cc58B85D4033C3",
             GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0xF879576c2D674C5D22f256083DC8fD019a3f33A1",
+            OSWAP_HybridRouterRegistry: "0x728DbD968341eb7aD11bDabFE775A13aF901d6ac",
         },
         80001: {
             WrappedNativeToken: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
             OAXDEX_Governance: "0x198b150E554F46aee505a7fb574F5D7895889772",
             GOV_TOKEN: "0xb0AF504638BDe5e53D6EaE1119dEd13411c35cF2",
             OSWAP_RestrictedFactory: "0x6D2b196aBf09CF97612a5c062bF14EC278F6D677",
+            OSWAP_HybridRouterRegistry: "0x68C229a3772dFebD0fD51df36B7029fcF75424F7",
         },
         43113: {
             WrappedNativeToken: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
             OAXDEX_Governance: "0xC025b30e6D4cBe4B6978a1A71a86e6eCB9F87F92",
             GOV_TOKEN: "0x27eF998b96c9A66937DBAc38c405Adcd7fa5e7DB",
             OSWAP_RestrictedFactory: "0x6C99c8E2c587706281a5B66bA7617DA7e2Ba6e48",
+            OSWAP_HybridRouterRegistry: "0xCd370BBbC84AB66a9e0Ff9F533E11DeC87704736",
         },
         43114: {
             WrappedNativeToken: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
             OAXDEX_Governance: "0x845308010c3b699150cdd54dcf0e7c4b8653e6b2",
             GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0x739f0BBcdAd415127FE8d5d6ED053e9D817BdAdb",
+            OSWAP_HybridRouterRegistry: "0xEA6A56086e66622208fa8e7B743Bad3FF47aD40c",
         },
         42161: {
             WrappedNativeToken: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
             OAXDEX_Governance: "0x5580B68478e714C02850251353Cc58B85D4033C3",
             GOV_TOKEN: "0x29E65d6f3e7a609E0138a1331D42D23159124B8E",
             OSWAP_RestrictedFactory: "0x408aAf94BD851eb991dA146dFc7C290aA42BA70f",
+            OSWAP_HybridRouterRegistry: "0xD5f2e1bb65d7AA483547D1eDF1B59edCa296F6D3",
         },
         421613: {
             WrappedNativeToken: "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f",
             OAXDEX_Governance: "0x6f460B0Bf633E22503Efa460429B0Ab32d655B9D",
             GOV_TOKEN: "0x5580B68478e714C02850251353Cc58B85D4033C3",
             OSWAP_RestrictedFactory: "0x6f641f4F5948954F7cd675f3D874Ac60b193bA0d",
+            OSWAP_HybridRouterRegistry: "0x7422408d5211a512f18fd55c49d5483d24c9ed6a",
         }
     };
 });
@@ -318,7 +326,7 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
 define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getFreezedStakeAmount = exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
+    exports.isPairRegistered = exports.getFreezedStakeAmount = exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
     //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
     async function doCreatePair(state, tokenA, tokenB) {
@@ -359,11 +367,11 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         const WETH9Address = state.getAddresses().WrappedNativeToken;
         let factoryAddress = state.getAddresses().OSWAP_RestrictedFactory;
         let pairs = [];
-        const addPair = (token0Address, token1Address) => {
+        const addPair = (pairAddress, token0Address, token1Address) => {
             const token0 = token0Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token0Address.toLowerCase();
             const token1 = token1Address.toLowerCase() == WETH9Address.toLowerCase() ? nativeToken.symbol : token1Address.toLowerCase();
-            pairs.push({ fromToken: token0, toToken: token1 });
-            pairs.push({ fromToken: token1, toToken: token0 });
+            pairs.push({ address: pairAddress, fromToken: token0, toToken: token1 });
+            pairs.push({ address: pairAddress, fromToken: token1, toToken: token0 });
         };
         const factoryContract = new oswap_openswap_contract_1.Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
         let allPairsLength = (await factoryContract.allPairsLength()).toNumber();
@@ -396,9 +404,10 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         }
         let restrictedPairCallResults = await wallet.doMulticall(restrictedPairCalls);
         for (let i = 0; i < restrictedPairAddresses.length; i++) {
+            let pairAddress = restrictedPairAddresses[i];
             let token0Address = restrictedPairCallResults[i * 2];
             let token1Address = restrictedPairCallResults[i * 2 + 1];
-            addPair(token0Address, token1Address);
+            addPair(pairAddress, token0Address, token1Address);
         }
         return pairs;
     }
@@ -450,6 +459,21 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         return amount;
     }
     exports.getFreezedStakeAmount = getFreezedStakeAmount;
+    async function isPairRegistered(state, pairAddress) {
+        let isRegistered = false;
+        try {
+            const wallet = state.getRpcWallet();
+            const chainId = state.getChainId();
+            const registry = new oswap_openswap_contract_1.Contracts.OSWAP_HybridRouterRegistry(wallet, state.getAddresses(chainId).OSWAP_HybridRouterRegistry);
+            const { token0, token1 } = await registry.getPairTokens([pairAddress]);
+            isRegistered = token0.length > 0 && token1.length > 0;
+        }
+        catch (err) {
+            console.error(err);
+        }
+        return isRegistered;
+    }
+    exports.isPairRegistered = isPairRegistered;
 });
 define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_3, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
@@ -468,23 +492,37 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                 const toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
                 const fromPairToken = fromToken?.toLowerCase();
                 const toPairToken = toToken?.toLowerCase();
-                const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+                const pair = this.pairs.find(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
                 const strPair = `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`;
                 this.executionProperties.isFlow = true;
                 this.executionProperties.fromToken = fromToken;
                 this.executionProperties.toToken = toToken;
-                if (isPairExisted) {
+                if (pair) {
                     if (this.state.handleJumpToStep) {
-                        this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
-                        this.state.handleJumpToStep({
-                            widgetName: 'scom-liquidity-provider',
-                            executionProperties: {
-                                tokenIn: fromToken,
-                                tokenOut: toToken,
-                                isCreate: true,
-                                isFlow: true
-                            }
-                        });
+                        let isRegistered = await (0, api_1.isPairRegistered)(this.state, pair.address);
+                        if (!isRegistered) {
+                            this.updateStepStatus(`Pair ${strPair} is not registered on Hybrid Router Registry`);
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-pair-registry',
+                                executionProperties: {
+                                    tokenIn: fromToken,
+                                    tokenOut: toToken,
+                                    isFlow: true
+                                }
+                            });
+                        }
+                        else {
+                            this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-liquidity-provider',
+                                executionProperties: {
+                                    tokenIn: fromToken,
+                                    tokenOut: toToken,
+                                    isCreate: true,
+                                    isFlow: true
+                                }
+                            });
+                        }
                     }
                 }
                 else {
@@ -507,7 +545,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                             if (votingBalance.lt(this.minThreshold)) {
                                 const freezeStakeAmount = await (0, api_1.getFreezedStakeAmount)(this.state);
                                 if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
-                                    this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                                    this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                                     this.state.handleJumpToStep({
                                         widgetName: 'scom-governance-unlock-staking',
                                         executionProperties: {
@@ -519,7 +557,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                                 }
                                 else {
                                     let value = new eth_wallet_3.BigNumber(this.minThreshold).minus(votingBalance).toFixed();
-                                    this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                                    this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                                     this.state.handleJumpToStep({
                                         widgetName: 'scom-governance-staking',
                                         executionProperties: {
@@ -533,7 +571,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                                 }
                             }
                             else {
-                                this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                                this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
                                 this.state.handleJumpToStep({
                                     widgetName: 'scom-governance-proposal',
                                     executionProperties: {
