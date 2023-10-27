@@ -318,7 +318,7 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
 define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
+    exports.getFreezedStakeAmount = exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
     //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
     async function doCreatePair(state, tokenA, tokenB) {
@@ -422,20 +422,34 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         return result;
     }
     exports.getVotingValue = getVotingValue;
-    async function stakeOf(state, address) {
+    async function stakeOf(state) {
         let result = new eth_wallet_2.BigNumber(0);
         try {
             const wallet = state.getRpcWallet();
             const chainId = state.getChainId();
             const gov = state.getAddresses(chainId).OAXDEX_Governance;
             const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
-            let stakeOf = await govContract.stakeOf(address);
+            let stakeOf = await govContract.stakeOf(wallet.account.address);
             result = eth_wallet_2.Utils.fromDecimals(stakeOf, state.getGovToken(chainId).decimals || 18);
         }
         catch (err) { }
         return result;
     }
     exports.stakeOf = stakeOf;
+    async function getFreezedStakeAmount(state) {
+        let amount = new eth_wallet_2.BigNumber(0);
+        try {
+            const wallet = state.getRpcWallet();
+            const chainId = state.getChainId();
+            const gov = state.getAddresses(chainId).OAXDEX_Governance;
+            const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
+            let result = await govContract.freezedStake(wallet.account.address);
+            amount = eth_wallet_2.Utils.fromDecimals(result.amount, state.getGovToken(chainId).decimals || 18);
+        }
+        catch (err) { }
+        return amount;
+    }
+    exports.getFreezedStakeAmount = getFreezedStakeAmount;
 });
 define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_3, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
@@ -493,26 +507,39 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     }
                     else {
                         if (this.state.handleJumpToStep) {
-                            const votingBalance = (await (0, api_1.stakeOf)(this.state, this.rpcWallet.account.address)).toNumber();
-                            if (votingBalance < this.minThreshold) {
-                                let value = (this.minThreshold - votingBalance).toString();
-                                this.alert({
-                                    title: "Insufficient Voting Balance",
-                                    onClose: () => {
-                                        this.updateStepStatus();
-                                        this.state.handleJumpToStep({
-                                            widgetName: 'scom-governance-staking',
-                                            executionProperties: {
-                                                tokenInputValue: value,
-                                                action: "add",
-                                                fromToken: fromToken,
-                                                toToken: toToken,
-                                                isFlow: true,
-                                                prevStep: 'scom-group-queue-pair'
-                                            }
-                                        });
-                                    }
-                                });
+                            const votingBalance = await (0, api_1.stakeOf)(this.state);
+                            if (votingBalance.lt(this.minThreshold)) {
+                                const freezeStakeAmount = await (0, api_1.getFreezedStakeAmount)(this.state);
+                                if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
+                                    this.updateStepStatus();
+                                    this.state.handleJumpToStep({
+                                        widgetName: 'scom-governance-unlock-staking',
+                                        executionProperties: {
+                                            fromToken: fromToken,
+                                            toToken: toToken,
+                                            isFlow: true
+                                        }
+                                    });
+                                }
+                                else {
+                                    let value = new eth_wallet_3.BigNumber(this.minThreshold).minus(votingBalance).toFixed();
+                                    this.alert({
+                                        title: "Insufficient Voting Balance",
+                                        onClose: () => {
+                                            this.updateStepStatus();
+                                            this.state.handleJumpToStep({
+                                                widgetName: 'scom-governance-staking',
+                                                executionProperties: {
+                                                    tokenInputValue: value,
+                                                    action: "add",
+                                                    fromToken: fromToken,
+                                                    toToken: toToken,
+                                                    isFlow: true
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
                             }
                             else {
                                 this.alert({
@@ -1104,8 +1131,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                 this.fromTokenInput.tokenReadOnly = true;
                 this.toTokenInput.tokenReadOnly = true;
                 const WETH9 = (0, index_2.getWETH)(this.chainId);
-                this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
-                this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
+                this.fromPairToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address;
+                this.toPairToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address;
                 const isSupported = await (0, api_2.isGroupQueueOracleSupported)(this.state, this.fromPairToken, this.toPairToken);
                 this.isReadyToCreate = isSupported;
                 this.pnlInfo.visible = this.msgCreatePair.visible = this.linkGov.visible = !isSupported;

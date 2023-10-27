@@ -158,7 +158,8 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
         minOaxTokenToCreateVote?: number;
         minQuorum?: number;
     }>;
-    export function stakeOf(state: State, address: string): Promise<BigNumber>;
+    export function stakeOf(state: State): Promise<BigNumber>;
+    export function getFreezedStakeAmount(state: State): Promise<BigNumber>;
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {

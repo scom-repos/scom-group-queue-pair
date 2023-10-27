@@ -119,15 +119,28 @@ export async function getVotingValue(state: State, param1: any) {
     return result;
 }
 
-export async function stakeOf(state: State, address: string) {
+export async function stakeOf(state: State) {
     let result = new BigNumber(0);
     try {
         const wallet = state.getRpcWallet();
         const chainId = state.getChainId();
         const gov = state.getAddresses(chainId).OAXDEX_Governance;
         const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
-        let stakeOf = await govContract.stakeOf(address);
+        let stakeOf = await govContract.stakeOf(wallet.account.address);
         result = Utils.fromDecimals(stakeOf, state.getGovToken(chainId).decimals || 18);
     } catch (err) {}
     return result;
+}
+
+export async function getFreezedStakeAmount(state: State) {
+    let amount = new BigNumber(0);
+    try {
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const gov = state.getAddresses(chainId).OAXDEX_Governance;
+        const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
+        let result = await govContract.freezedStake(wallet.account.address);
+        amount = Utils.fromDecimals(result.amount, state.getGovToken(chainId).decimals || 18);
+    } catch (err) {}
+    return amount;
 }

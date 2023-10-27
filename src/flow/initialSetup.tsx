@@ -9,13 +9,13 @@ import {
     Module,
     Styles
 } from "@ijstech/components";
-import { Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
+import { BigNumber, Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
 import ScomTokenInput from "@scom/scom-token-input";
 import { ITokenObject, tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
 import { getWETH, isClientWalletConnected, State } from "../store/index";
 import { Pair } from "../interface";
-import { getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, stakeOf } from "../api";
+import { getFreezedStakeAmount, getGroupQueuePairs, getVotingValue, isGroupQueueOracleSupported, stakeOf } from "../api";
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -229,26 +229,38 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 }
             } else {
                 if (this.state.handleJumpToStep) {
-                    const votingBalance = (await stakeOf(this.state, this.rpcWallet.account.address)).toNumber();
-                    if (votingBalance < this.minThreshold) {
-                        let value = (this.minThreshold - votingBalance).toString();
-                        this.alert({
-                            title: "Insufficient Voting Balance",
-                            onClose: () => {
-                                this.updateStepStatus();
-                                this.state.handleJumpToStep({
-                                    widgetName: 'scom-governance-staking',
-                                    executionProperties: {
-                                        tokenInputValue: value,
-                                        action: "add",
-                                        fromToken: fromToken,
-                                        toToken: toToken,
-                                        isFlow: true,
-                                        prevStep: 'scom-group-queue-pair'
-                                    }
-                                });
-                            }
-                        })
+                    const votingBalance = await stakeOf(this.state);
+                    if (votingBalance.lt(this.minThreshold)) {
+                        const freezeStakeAmount = await getFreezedStakeAmount(this.state);
+                        if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
+                            this.updateStepStatus();
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-governance-unlock-staking',
+                                executionProperties: {
+                                    fromToken: fromToken,
+                                    toToken: toToken,
+                                    isFlow: true
+                                }
+                            });
+                        } else {
+                            let value = new BigNumber(this.minThreshold).minus(votingBalance).toFixed();
+                            this.alert({
+                                title: "Insufficient Voting Balance",
+                                onClose: () => {
+                                    this.updateStepStatus();
+                                    this.state.handleJumpToStep({
+                                        widgetName: 'scom-governance-staking',
+                                        executionProperties: {
+                                            tokenInputValue: value,
+                                            action: "add",
+                                            fromToken: fromToken,
+                                            toToken: toToken,
+                                            isFlow: true
+                                        }
+                                    });
+                                }
+                            })
+                        }
                     } else {
                         this.alert({
                             content: "Pair is not registered in the Oracle, please create pair executive proposal.",
