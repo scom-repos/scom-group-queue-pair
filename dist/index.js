@@ -1140,7 +1140,8 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     if (this.state.handleUpdateStepStatus) {
                         this.state.handleUpdateStepStatus({
                             status: "Completed",
-                            color: Theme.colors.success.main
+                            color: Theme.colors.success.main,
+                            message: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
                         });
                     }
                     if (this.state.handleAddTransactions) {
