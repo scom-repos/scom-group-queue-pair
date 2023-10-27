@@ -5,7 +5,6 @@ import {
     ControlElement,
     customElements,
     Label,
-    Modal,
     Module,
     Styles
 } from "@ijstech/components";
@@ -38,9 +37,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private fromTokenInput: ScomTokenInput;
     private toTokenInput: ScomTokenInput;
     private btnStart: Button;
-    private mdAlert: Modal;
-    private lblTitle: Label;
-    private lblContent: Label;
     private mdWallet: ScomWalletModal;
     private _state: State;
     private tokenRequirements: any;
@@ -162,51 +158,36 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         }
         this.btnStart.enabled = this.isPairReady && !!(this.fromTokenInput?.token && this.toTokenInput?.token);
     }
-    private closeAlertModal() {
-        this.mdAlert.visible = false;
-    }
-    private alert(value: { title?: string, content?: string, onClose?: any }) {
-        const { title, content, onClose } = value;
-        this.lblTitle.caption = title || "";
-        this.lblTitle.visible = !!title;
-        this.lblContent.caption = content || "";
-        this.lblContent.visible = !!content;
-        this.mdAlert.onClose = onClose;
-        this.mdAlert.visible = true;
-    }
-    private updateStepStatus() {
+    private updateStepStatus(message?: string) {
         if (this.state.handleUpdateStepStatus) {
             this.state.handleUpdateStepStatus({
-                caption: "Completed",
-                color: Theme.colors.success.main
+                status: "Completed",
+                color: Theme.colors.success.main,
+                message
             });
         }
     }
     private handleClickStart = async () => {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
-        const fromToken = this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol;
-        const toToken = this.toTokenInput.token?.address || this.toTokenInput.token?.symbol;
+        const fromToken = this.fromTokenInput.token.address || this.fromTokenInput.token.symbol;
+        const toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
         const fromPairToken = fromToken?.toLowerCase();
         const toPairToken = toToken?.toLowerCase();
         const isPairExisted = this.pairs.some(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+        const strPair = `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`;
         this.executionProperties.isFlow = true;
         this.executionProperties.fromToken = fromToken;
         this.executionProperties.toToken = toToken;
         if (isPairExisted) {
             if (this.state.handleJumpToStep) {
-                this.alert({
-                    content: "This pair is already created in the Group Queues.",
-                    onClose: () => {
-                        this.updateStepStatus();
-                        this.state.handleJumpToStep({
-                            widgetName: 'scom-liquidity-provider',
-                            executionProperties: {
-                                tokenIn: fromToken,
-                                tokenOut: toToken,
-                                isCreate: true,
-                                isFlow: true
-                            }
-                        })
+                this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
+                this.state.handleJumpToStep({
+                    widgetName: 'scom-liquidity-provider',
+                    executionProperties: {
+                        tokenIn: fromToken,
+                        tokenOut: toToken,
+                        isCreate: true,
+                        isFlow: true
                     }
                 })
             }
@@ -220,7 +201,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address
             );
             if (isSupported) {
-                this.updateStepStatus();
+                this.updateStepStatus(strPair);
                 if (this.state.handleNextFlowStep) {
                     this.state.handleNextFlowStep({
                         tokenRequirements: this.tokenRequirements,
@@ -233,7 +214,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                     if (votingBalance.lt(this.minThreshold)) {
                         const freezeStakeAmount = await getFreezedStakeAmount(this.state);
                         if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
-                            this.updateStepStatus();
+                            this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
                             this.state.handleJumpToStep({
                                 widgetName: 'scom-governance-unlock-staking',
                                 executionProperties: {
@@ -244,38 +225,28 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                             });
                         } else {
                             let value = new BigNumber(this.minThreshold).minus(votingBalance).toFixed();
-                            this.alert({
-                                title: "Insufficient Voting Balance",
-                                onClose: () => {
-                                    this.updateStepStatus();
-                                    this.state.handleJumpToStep({
-                                        widgetName: 'scom-governance-staking',
-                                        executionProperties: {
-                                            tokenInputValue: value,
-                                            action: "add",
-                                            fromToken: fromToken,
-                                            toToken: toToken,
-                                            isFlow: true
-                                        }
-                                    });
+                            this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-governance-staking',
+                                executionProperties: {
+                                    tokenInputValue: value,
+                                    action: "add",
+                                    fromToken: fromToken,
+                                    toToken: toToken,
+                                    isFlow: true
                                 }
-                            })
+                            });
                         }
                     } else {
-                        this.alert({
-                            content: "Pair is not registered in the Oracle, please create pair executive proposal.",
-                            onClose: () => {
-                                this.updateStepStatus();
-                                this.state.handleJumpToStep({
-                                    widgetName: 'scom-governance-proposal',
-                                    executionProperties: {
-                                        fromToken: fromToken,
-                                        toToken: toToken,
-                                        isFlow: true
-                                    }
-                                })
+                        this.updateStepStatus(`Pair ${strPair} is not registered, governance required`);
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-governance-proposal',
+                            executionProperties: {
+                                fromToken: fromToken,
+                                toToken: toToken,
+                                isFlow: true
                             }
-                        })
+                        });
                     }
                 }
             }
@@ -331,36 +302,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                         onClick={this.handleClickStart}
                     ></i-button>
                 </i-hstack>
-                <i-modal id="mdAlert" maxWidth="400px">
-                    <i-panel
-                        width="100%"
-                        padding={{ top: "1.5rem", bottom: "1.5rem", left: "1.5rem", right: "1.5rem" }}
-                    >
-                        <i-vstack horizontalAlignment="center" gap="1.75rem">
-                            <i-icon
-                                width={55}
-                                height={55}
-                                name="exclamation"
-                                fill={Theme.colors.warning.main}
-                                padding={{ top: "0.6rem", bottom: "0.6rem", left: "0.6rem", right: "0.6rem" }}
-                                border={{ width: 2, style: 'solid', color: Theme.colors.warning.main, radius: '50%' }}
-                            ></i-icon>
-                            <i-vstack class="text-center" horizontalAlignment="center" gap="0.75rem" lineHeight={1.5}>
-                                <i-label id="lblTitle" font={{ size: '1.25rem', bold: true }} visible={false}></i-label>
-                                <i-label id="lblContent" overflowWrap='anywhere' visible={false}></i-label>
-                            </i-vstack>
-                            <i-hstack verticalAlignment='center' gap="0.5rem">
-                                <i-button
-                                    padding={{ top: "0.5rem", bottom: "0.5rem", left: "2rem", right: "2rem" }}
-                                    caption="Ok"
-                                    font={{ color: Theme.colors.secondary.contrastText }}
-                                    background={{ color: Theme.colors.secondary.main }}
-                                    onClick={this.closeAlertModal.bind(this)}
-                                ></i-button>
-                            </i-hstack>
-                        </i-vstack>
-                    </i-panel>
-                </i-modal>
                 <i-scom-wallet-modal id="mdWallet" wallets={[]} />
             </i-vstack>
         )
