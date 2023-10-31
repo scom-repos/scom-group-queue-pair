@@ -352,17 +352,18 @@ export default class ScomGroupQueuePair extends Module {
             this.toTokenInput.chainId = chainId;
             const tokens = tokenStore.getTokenList(chainId);
             const customTokens = this._data.customTokens[this.chainId] ?? [];
-            this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
-            this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];
+            const tokenList = [...tokens, ...customTokens];
+            this.fromTokenInput.tokenDataListProp = tokenList;
+            this.toTokenInput.tokenDataListProp = tokenList;
             if (this.isFlow) {
                 this.fromPairToken = this.toPairToken = "";
                 if (this._data.fromToken) {
                     const fromToken = this._data.fromToken.toLowerCase();
-                    this.fromTokenInput.token = this.fromTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === fromToken || t.address?.toLowerCase() === fromToken);
+                    this.fromTokenInput.token = tokenList.find(t => t.symbol.toLowerCase() === fromToken || t.address?.toLowerCase() === fromToken);
                 }
                 if (this._data.toToken) {
                     const toToken = this._data.toToken.toLowerCase();
-                    this.toTokenInput.token = this.toTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === toToken || t.address?.toLowerCase() === toToken);
+                    this.toTokenInput.token = tokenList.find(t => t.symbol.toLowerCase() === toToken || t.address?.toLowerCase() === toToken);
                 }
             }
             if (!this.pairs) {
