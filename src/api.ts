@@ -1,3 +1,4 @@
+import { application, IPFS } from "@ijstech/components";
 import { BigNumber, IMulticallContractCall, TransactionReceipt, Utils, Wallet } from "@ijstech/eth-wallet"
 import { Contracts } from '@scom/oswap-openswap-contract';
 import { ChainNativeTokenByChainId } from "@scom/scom-token-list";
@@ -163,3 +164,17 @@ export async function isPairRegistered(state: State, pairAddress: string) {
     }
     return isRegistered;
 }
+export async function uploadImageToIPFS(file: any) {
+    let dir = await IPFS.hashFiles([file]);
+    let uploadUrl = await application.getUploadUrl(dir);
+    if (file.cid?.cid && uploadUrl[file.cid.cid]) {
+      let result = await application.upload(
+        uploadUrl[file.cid.cid],
+        file
+      );
+      if (uploadUrl[dir.cid]) {
+        let result = await application.upload(uploadUrl[dir.cid], JSON.stringify(dir));
+      };
+    }
+    return `/ipfs/${dir.cid}/${file.name}`;
+  }

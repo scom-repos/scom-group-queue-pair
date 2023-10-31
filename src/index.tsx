@@ -351,12 +351,19 @@ export default class ScomGroupQueuePair extends Module {
             this.fromTokenInput.chainId = chainId;
             this.toTokenInput.chainId = chainId;
             const tokens = tokenStore.getTokenList(chainId);
-            this.fromTokenInput.tokenDataListProp = tokens;
-            this.toTokenInput.tokenDataListProp = tokens;
+            const customTokens = this._data.customTokens[this.chainId] ?? [];
+            this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
+            this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];
             if (this.isFlow) {
                 this.fromPairToken = this.toPairToken = "";
-                if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
-                if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
+                if (this._data.fromToken) {
+                    const fromToken = this._data.fromToken.toLowerCase();
+                    this.fromTokenInput.token = this.fromTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === fromToken || t.address?.toLowerCase() === fromToken);
+                }
+                if (this._data.toToken) {
+                    const toToken = this._data.toToken.toLowerCase();
+                    this.toTokenInput.token = this.toTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === toToken || t.address?.toLowerCase() === toToken);
+                }
             }
             if (!this.pairs) {
                 this.fromTokenInput.tokenReadOnly = true;

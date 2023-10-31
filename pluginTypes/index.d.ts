@@ -11,6 +11,7 @@ declare module "@scom/scom-group-queue-pair/assets.ts" {
 /// <amd-module name="@scom/scom-group-queue-pair/interface.ts" />
 declare module "@scom/scom-group-queue-pair/interface.ts" {
     import { INetworkConfig } from "@scom/scom-network-picker";
+    import { ITokenObject } from "@scom/scom-token-list";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
     export interface IGroupQueuePair {
         wallets: IWalletPlugin[];
@@ -19,6 +20,7 @@ declare module "@scom/scom-group-queue-pair/interface.ts" {
         showHeader?: boolean;
         fromToken?: string;
         toToken?: string;
+        customTokens?: Record<number, ITokenObject[]>;
         isFlow?: boolean;
     }
     export type Pair = {
@@ -164,6 +166,7 @@ declare module "@scom/scom-group-queue-pair/api.ts" {
     export function stakeOf(state: State): Promise<BigNumber>;
     export function getFreezedStakeAmount(state: State): Promise<BigNumber>;
     export function isPairRegistered(state: State, pairAddress: string): Promise<boolean>;
+    export function uploadImageToIPFS(file: any): Promise<string>;
 }
 /// <amd-module name="@scom/scom-group-queue-pair/flow/initialSetup.tsx" />
 declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
@@ -185,6 +188,12 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private fromTokenInput;
         private toTokenInput;
         private btnStart;
+        private mdImportToken;
+        private edtTokenAddress;
+        private uploader;
+        private edtLogoUrl;
+        private pnlErrMsg;
+        private btnImportToken;
         private mdWallet;
         private _state;
         private tokenRequirements;
@@ -193,6 +202,8 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private _pairs;
         private minThreshold;
         private isPairReady;
+        private isImageChanged;
+        private customTokens;
         get state(): State;
         set state(value: State);
         private get rpcWallet();
@@ -213,6 +224,11 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private handleSelectToken;
         private updateStepStatus;
         private handleClickStart;
+        private openTokenModal;
+        private onImageChanged;
+        private uploadImage;
+        private getTokenObjectByAddress;
+        private importToken;
         render(): any;
         handleFlowStage(target: Control, stage: string, options: any): Promise<{
             widget: ScomGroupQueuePairFlowInitialSetup;
@@ -225,6 +241,7 @@ declare module "@scom/scom-group-queue-pair" {
     import { IGroupQueuePair, Pair } from "@scom/scom-group-queue-pair/interface.ts";
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
+    import { ITokenObject } from '@scom/scom-token-list';
     interface ScomGroupQueuePairElement extends ControlElement {
         lazyLoad?: boolean;
         networks: INetworkConfig[];
@@ -304,6 +321,7 @@ declare module "@scom/scom-group-queue-pair" {
                 showHeader?: boolean;
                 fromToken?: string;
                 toToken?: string;
+                customTokens?: Record<number, ITokenObject[]>;
                 isFlow?: boolean;
             }>;
             setData: (properties: IGroupQueuePair, linkParams?: Record<string, any>) => Promise<void>;

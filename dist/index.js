@@ -323,10 +323,10 @@ define("@scom/scom-group-queue-pair/data.json.ts", ["require", "exports"], funct
         }
     };
 });
-define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
+define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract", "@scom/scom-token-list"], function (require, exports, components_3, eth_wallet_2, oswap_openswap_contract_1, scom_token_list_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.isPairRegistered = exports.getFreezedStakeAmount = exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
+    exports.uploadImageToIPFS = exports.isPairRegistered = exports.getFreezedStakeAmount = exports.stakeOf = exports.getVotingValue = exports.getGroupQueuePairs = exports.isGroupQueueOracleSupported = exports.doCreatePair = exports.nullAddress = void 0;
     //call OSWAP_RestrictedFactory.createPair(address tokenA, address tokenB)
     exports.nullAddress = "0x0000000000000000000000000000000000000000";
     async function doCreatePair(state, tokenA, tokenB) {
@@ -477,119 +477,31 @@ define("@scom/scom-group-queue-pair/api.ts", ["require", "exports", "@ijstech/et
         return isRegistered;
     }
     exports.isPairRegistered = isPairRegistered;
+    async function uploadImageToIPFS(file) {
+        let dir = await components_3.IPFS.hashFiles([file]);
+        let uploadUrl = await components_3.application.getUploadUrl(dir);
+        if (file.cid?.cid && uploadUrl[file.cid.cid]) {
+            let result = await components_3.application.upload(uploadUrl[file.cid.cid], file);
+            if (uploadUrl[dir.cid]) {
+                let result = await components_3.application.upload(uploadUrl[dir.cid], JSON.stringify(dir));
+            }
+            ;
+        }
+        return `/ipfs/${dir.cid}/${file.name}`;
+    }
+    exports.uploadImageToIPFS = uploadImageToIPFS;
 });
-define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_3, eth_wallet_3, scom_token_list_4, index_1, api_1) {
+define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/api.ts"], function (require, exports, components_4, eth_wallet_3, scom_token_list_4, index_1, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_3.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_3.Module {
+    const Theme = components_4.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePairFlowInitialSetup = class ScomGroupQueuePairFlowInitialSetup extends components_4.Module {
         constructor() {
             super(...arguments);
             this.walletEvents = [];
             this.minThreshold = 0;
             this.isPairReady = false;
-            this.handleClickStart = async () => {
-                if (!this.fromTokenInput.token || !this.toTokenInput.token)
-                    return;
-                const fromToken = this.fromTokenInput.token.address || this.fromTokenInput.token.symbol;
-                const toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
-                const fromPairToken = fromToken?.toLowerCase();
-                const toPairToken = toToken?.toLowerCase();
-                const pair = this.pairs.find(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
-                const strPair = `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`;
-                this.executionProperties.isFlow = true;
-                this.executionProperties.fromToken = fromToken;
-                this.executionProperties.toToken = toToken;
-                if (pair) {
-                    if (this.state.handleJumpToStep) {
-                        let isRegistered = await (0, api_1.isPairRegistered)(this.state, pair.address);
-                        if (!isRegistered) {
-                            this.updateStepStatus(`Pair ${strPair} is not registered on Hybrid Router Registry`);
-                            this.state.handleJumpToStep({
-                                widgetName: 'scom-pair-registry',
-                                executionProperties: {
-                                    tokenIn: fromToken,
-                                    tokenOut: toToken,
-                                    isFlow: true
-                                }
-                            });
-                        }
-                        else {
-                            this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
-                            this.state.handleJumpToStep({
-                                widgetName: 'scom-liquidity-provider',
-                                executionProperties: {
-                                    tokenIn: fromToken,
-                                    tokenOut: toToken,
-                                    isCreate: true,
-                                    isFlow: true
-                                }
-                            });
-                        }
-                    }
-                }
-                else {
-                    this.btnStart.rightIcon.spin = true;
-                    this.btnStart.rightIcon.visible = true;
-                    const WETH9 = (0, index_1.getWETH)(this.chainId);
-                    const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address, this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address);
-                    if (isSupported) {
-                        this.updateStepStatus(strPair);
-                        if (this.state.handleNextFlowStep) {
-                            this.state.handleNextFlowStep({
-                                tokenRequirements: this.tokenRequirements,
-                                executionProperties: this.executionProperties
-                            });
-                        }
-                    }
-                    else {
-                        if (this.state.handleJumpToStep) {
-                            const votingBalance = await (0, api_1.stakeOf)(this.state);
-                            if (votingBalance.lt(this.minThreshold)) {
-                                const freezeStakeAmount = await (0, api_1.getFreezedStakeAmount)(this.state);
-                                if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
-                                    this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
-                                    this.state.handleJumpToStep({
-                                        widgetName: 'scom-governance-unlock-staking',
-                                        executionProperties: {
-                                            fromToken: fromToken,
-                                            toToken: toToken,
-                                            isFlow: true
-                                        }
-                                    });
-                                }
-                                else {
-                                    let value = new eth_wallet_3.BigNumber(this.minThreshold).minus(votingBalance).toFixed();
-                                    this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
-                                    this.state.handleJumpToStep({
-                                        widgetName: 'scom-governance-staking',
-                                        executionProperties: {
-                                            tokenInputValue: value,
-                                            action: "add",
-                                            fromToken: fromToken,
-                                            toToken: toToken,
-                                            isFlow: true
-                                        }
-                                    });
-                                }
-                            }
-                            else {
-                                this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
-                                this.state.handleJumpToStep({
-                                    widgetName: 'scom-governance-proposal',
-                                    executionProperties: {
-                                        fromToken: fromToken,
-                                        toToken: toToken,
-                                        isFlow: true
-                                    }
-                                });
-                            }
-                        }
-                    }
-                    this.btnStart.rightIcon.spin = false;
-                    this.btnStart.rightIcon.visible = false;
-                }
-            };
+            this.customTokens = {};
         }
         get state() {
             return this._state;
@@ -616,6 +528,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             this.executionProperties = value.executionProperties;
             this.tokenRequirements = value.tokenRequirements;
             this.btnStart.enabled = false;
+            this.customTokens = {};
+            this.customTokens[this.chainId] = [];
             await this.resetRpcWallet();
             await this.initializeWidgetConfig();
         }
@@ -646,7 +560,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
                 if (this.mdWallet) {
-                    await components_3.application.loadPackage('@scom/scom-wallet-modal', '*');
+                    await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
                     this.mdWallet.networks = this.executionProperties.networks;
                     this.mdWallet.wallets = this.executionProperties.wallets;
                     this.mdWallet.showModal();
@@ -714,6 +628,177 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                 });
             }
         }
+        async handleClickStart() {
+            if (!this.fromTokenInput.token || !this.toTokenInput.token)
+                return;
+            const fromToken = this.fromTokenInput.token.address || this.fromTokenInput.token.symbol;
+            const toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
+            const fromPairToken = fromToken?.toLowerCase();
+            const toPairToken = toToken?.toLowerCase();
+            const pair = this.pairs.find(pair => pair.fromToken.toLowerCase() === fromPairToken && pair.toToken.toLowerCase() === toPairToken);
+            const strPair = `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`;
+            this.executionProperties.isFlow = true;
+            this.executionProperties.fromToken = fromToken;
+            this.executionProperties.toToken = toToken;
+            this.executionProperties.customTokens = this.customTokens;
+            if (pair) {
+                if (this.state.handleJumpToStep) {
+                    let isRegistered = await (0, api_1.isPairRegistered)(this.state, pair.address);
+                    if (!isRegistered) {
+                        this.updateStepStatus(`Pair ${strPair} is not registered on Hybrid Router Registry`);
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-pair-registry',
+                            executionProperties: {
+                                tokenIn: fromToken,
+                                tokenOut: toToken,
+                                customTokens: this.customTokens,
+                                isFlow: true
+                            }
+                        });
+                    }
+                    else {
+                        this.updateStepStatus(`Pair ${strPair} is already created in the Group Queues`);
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-liquidity-provider',
+                            executionProperties: {
+                                tokenIn: fromToken,
+                                tokenOut: toToken,
+                                customTokens: this.customTokens,
+                                isCreate: true,
+                                isFlow: true
+                            }
+                        });
+                    }
+                }
+            }
+            else {
+                this.btnStart.rightIcon.spin = true;
+                this.btnStart.rightIcon.visible = true;
+                const WETH9 = (0, index_1.getWETH)(this.chainId);
+                const isSupported = await (0, api_1.isGroupQueueOracleSupported)(this.state, this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address, this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address);
+                if (isSupported) {
+                    this.updateStepStatus(strPair);
+                    if (this.state.handleNextFlowStep) {
+                        this.state.handleNextFlowStep({
+                            tokenRequirements: this.tokenRequirements,
+                            executionProperties: this.executionProperties
+                        });
+                    }
+                }
+                else {
+                    if (this.state.handleJumpToStep) {
+                        const votingBalance = await (0, api_1.stakeOf)(this.state);
+                        if (votingBalance.lt(this.minThreshold)) {
+                            const freezeStakeAmount = await (0, api_1.getFreezedStakeAmount)(this.state);
+                            if (freezeStakeAmount.plus(votingBalance).gte(this.minThreshold)) {
+                                this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-unlock-staking',
+                                    executionProperties: {
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        customTokens: this.customTokens,
+                                        isFlow: true
+                                    }
+                                });
+                            }
+                            else {
+                                let value = new eth_wallet_3.BigNumber(this.minThreshold).minus(votingBalance).toFixed();
+                                this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
+                                this.state.handleJumpToStep({
+                                    widgetName: 'scom-governance-staking',
+                                    executionProperties: {
+                                        tokenInputValue: value,
+                                        action: "add",
+                                        fromToken: fromToken,
+                                        toToken: toToken,
+                                        customTokens: this.customTokens,
+                                        isFlow: true
+                                    }
+                                });
+                            }
+                        }
+                        else {
+                            this.updateStepStatus(`Pair ${strPair} is not registered in the Oracle, governance required`);
+                            this.state.handleJumpToStep({
+                                widgetName: 'scom-governance-proposal',
+                                executionProperties: {
+                                    fromToken: fromToken,
+                                    toToken: toToken,
+                                    customTokens: this.customTokens,
+                                    isFlow: true
+                                }
+                            });
+                        }
+                    }
+                }
+                this.btnStart.rightIcon.spin = false;
+                this.btnStart.rightIcon.visible = false;
+            }
+        }
+        openTokenModal() {
+            this.mdImportToken.visible = true;
+        }
+        onImageChanged() {
+            this.isImageChanged = true;
+        }
+        async uploadImage(file) {
+            let imageUrl = (0, api_1.uploadImageToIPFS)(file);
+            return imageUrl;
+        }
+        async getTokenObjectByAddress(address) {
+            let token;
+            try {
+                let erc20 = new eth_wallet_3.Erc20(this.rpcWallet, address);
+                let name = await erc20.name;
+                let decimals = await erc20.decimals;
+                let symbol = await erc20.symbol;
+                token = {
+                    chainId: this.chainId,
+                    address: address,
+                    name,
+                    decimals,
+                    symbol
+                };
+            }
+            catch (err) {
+                console.log(err);
+            }
+            return token;
+        }
+        async importToken() {
+            this.btnImportToken.rightIcon.spin = true;
+            this.btnImportToken.rightIcon.visible = true;
+            const customTokens = this.customTokens[this.chainId];
+            const tokenAddress = this.edtTokenAddress.value;
+            let logoUrl = this.edtLogoUrl.value;
+            const file = this.uploader.fileList?.[0];
+            const token = await this.getTokenObjectByAddress(tokenAddress);
+            this.pnlErrMsg.visible = !token;
+            if (!token) {
+                this.btnImportToken.rightIcon.spin = false;
+                this.btnImportToken.rightIcon.visible = false;
+                return;
+            }
+            if (this.isImageChanged && file) {
+                logoUrl = await this.uploadImage(file);
+            }
+            token.logoURI = logoUrl;
+            const tokenIdx = customTokens.findIndex(t => t.address === tokenAddress);
+            if (tokenIdx === -1) {
+                customTokens.push(token);
+            }
+            else {
+                customTokens[tokenIdx] = token;
+            }
+            console.log("customTokens: ", customTokens);
+            const tokens = scom_token_list_4.tokenStore.getTokenList(this.chainId);
+            this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
+            this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];
+            this.btnImportToken.rightIcon.spin = false;
+            this.btnImportToken.rightIcon.visible = false;
+            this.mdImportToken.visible = false;
+        }
         render() {
             return (this.$render("i-vstack", { gap: "1rem", padding: { top: 10, bottom: 10, left: 20, right: 20 } },
                 this.$render("i-label", { caption: "Get Ready to Create Pair" }),
@@ -726,8 +811,29 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.$render("i-scom-token-input", { id: "fromTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectFromToken.bind(this) }),
                     this.$render("i-label", { caption: "to", font: { size: "1rem" } }),
                     this.$render("i-scom-token-input", { id: "toTokenInput", type: "combobox", isBalanceShown: false, isBtnMaxShown: false, isInputShown: false, border: { radius: 12 }, onSelectToken: this.onSelectToToken.bind(this) })),
+                this.$render("i-panel", null,
+                    this.$render("i-label", { display: "inline", caption: "Click " }),
+                    this.$render("i-label", { class: "pointer", display: "inline", caption: "here", font: { color: Theme.colors.primary.main, weight: 600 }, onClick: this.openTokenModal.bind(this) }),
+                    this.$render("i-label", { display: "inline", caption: " to import custom token" })),
                 this.$render("i-hstack", { horizontalAlignment: 'center' },
-                    this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart })),
+                    this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart.bind(this) })),
+                this.$render("i-modal", { id: "mdImportToken", width: 640, title: "Import Token", closeIcon: { name: "times" }, closeOnBackdropClick: false },
+                    this.$render("i-vstack", { padding: { top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }, gap: "1rem" },
+                        this.$render("i-vstack", { gap: "0.5rem" },
+                            this.$render("i-panel", null,
+                                this.$render("i-label", { display: "inline", caption: "Token Address " }),
+                                this.$render("i-label", { display: "inline", caption: "*", font: { color: Theme.colors.error.main } })),
+                            this.$render("i-input", { id: "edtTokenAddress", width: "100%", height: 32, border: { radius: 5 } })),
+                        this.$render("i-vstack", { gap: "0.5rem" },
+                            this.$render("i-label", { caption: "Token Logo" }),
+                            this.$render("i-upload", { id: "uploader", accept: "image/*", draggable: true, margin: { top: 0, bottom: 0 }, showFileList: false, onChanged: this.onImageChanged.bind(this) }),
+                            this.$render("i-label", { class: "text-center", caption: "- or -", font: { size: '14px', color: Theme.text.secondary }, margin: { bottom: '0.35rem' } }),
+                            this.$render("i-input", { id: "edtLogoUrl", width: "100%", height: 32, border: { radius: 5 } })),
+                        this.$render("i-hstack", { id: "pnlErrMsg", gap: "0.25rem", verticalAlignment: "center", visible: false },
+                            this.$render("i-icon", { height: 14, width: 14, fill: Theme.colors.error.main, name: "exclamation-triangle" }),
+                            this.$render("i-label", { caption: "Token Not Found", font: { size: "12px", color: Theme.colors.error.main, bold: true } })),
+                        this.$render("i-hstack", { horizontalAlignment: "end", verticalAlignment: "center" },
+                            this.$render("i-button", { id: "btnImportToken", height: 40, minWidth: 120, caption: "Confirm", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText }, onClick: this.importToken.bind(this) })))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
         }
         async handleFlowStage(target, stage, options) {
@@ -748,15 +854,15 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         }
     };
     ScomGroupQueuePairFlowInitialSetup = __decorate([
-        (0, components_3.customElements)('i-scom-group-queue-pair-flow-initial-setup')
+        (0, components_4.customElements)('i-scom-group-queue-pair-flow-initial-setup')
     ], ScomGroupQueuePairFlowInitialSetup);
     exports.default = ScomGroupQueuePairFlowInitialSetup;
 });
-define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_4, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, api_2, initialSetup_1) {
+define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/components", "@scom/scom-group-queue-pair/assets.ts", "@scom/scom-group-queue-pair/formSchema.ts", "@scom/scom-group-queue-pair/store/index.ts", "@scom/scom-group-queue-pair/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-group-queue-pair/api.ts", "@scom/scom-group-queue-pair/flow/initialSetup.tsx"], function (require, exports, components_5, assets_1, formSchema_1, index_2, data_json_1, eth_wallet_4, scom_token_list_5, api_2, initialSetup_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_4.Styles.Theme.ThemeVars;
-    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_4.Module {
+    const Theme = components_5.Styles.Theme.ThemeVars;
+    let ScomGroupQueuePair = class ScomGroupQueuePair extends components_5.Module {
         get chainId() {
             return this.state.getChainId();
         }
@@ -830,14 +936,19 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                     this.fromTokenInput.chainId = chainId;
                     this.toTokenInput.chainId = chainId;
                     const tokens = scom_token_list_5.tokenStore.getTokenList(chainId);
-                    this.fromTokenInput.tokenDataListProp = tokens;
-                    this.toTokenInput.tokenDataListProp = tokens;
+                    const customTokens = this._data.customTokens[this.chainId] ?? [];
+                    this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
+                    this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];
                     if (this.isFlow) {
                         this.fromPairToken = this.toPairToken = "";
-                        if (this._data.fromToken)
-                            this.fromTokenInput.address = this._data.fromToken;
-                        if (this._data.toToken)
-                            this.toTokenInput.address = this._data.toToken;
+                        if (this._data.fromToken) {
+                            const fromToken = this._data.fromToken.toLowerCase();
+                            this.fromTokenInput.token = this.fromTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === fromToken || t.address?.toLowerCase() === fromToken);
+                        }
+                        if (this._data.toToken) {
+                            const toToken = this._data.toToken.toLowerCase();
+                            this.toTokenInput.token = this.toTokenInput.tokenDataListProp.find(t => t.symbol.toLowerCase() === toToken || t.address?.toLowerCase() === toToken);
+                        }
                     }
                     if (!this.pairs) {
                         this.fromTokenInput.tokenReadOnly = true;
@@ -867,7 +978,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
             this.connectWallet = async () => {
                 if (!(0, index_2.isClientWalletConnected)()) {
                     if (this.mdWallet) {
-                        await components_4.application.loadPackage('@scom/scom-wallet-modal', '*');
+                        await components_5.application.loadPackage('@scom/scom-wallet-modal', '*');
                         this.mdWallet.networks = this.networks;
                         this.mdWallet.wallets = this.wallets;
                         this.mdWallet.showModal();
@@ -1281,7 +1392,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
         }
     };
     ScomGroupQueuePair = __decorate([
-        (0, components_4.customElements)('i-scom-group-queue-pair')
+        (0, components_5.customElements)('i-scom-group-queue-pair')
     ], ScomGroupQueuePair);
     exports.default = ScomGroupQueuePair;
 });
