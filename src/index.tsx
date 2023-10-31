@@ -522,6 +522,7 @@ export default class ScomGroupQueuePair extends Module {
                         executionProperties: {
                             tokenIn: fromToken,
                             tokenOut: toToken,
+                            customTokens: this._data.customTokens,
                             isCreate: true,
                             isFlow: true
                         }

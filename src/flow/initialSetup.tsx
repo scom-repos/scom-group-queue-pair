@@ -340,7 +340,6 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
         } else {
             customTokens[tokenIdx] = token;
         }
-        console.log("customTokens: ", customTokens)
         const tokens = tokenStore.getTokenList(this.chainId);
         this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
         this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];

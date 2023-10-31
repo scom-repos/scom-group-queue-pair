@@ -791,7 +791,6 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
             else {
                 customTokens[tokenIdx] = token;
             }
-            console.log("customTokens: ", customTokens);
             const tokens = scom_token_list_4.tokenStore.getTokenList(this.chainId);
             this.fromTokenInput.tokenDataListProp = [...tokens, ...customTokens];
             this.toTokenInput.tokenDataListProp = [...tokens, ...customTokens];
@@ -1322,6 +1321,7 @@ define("@scom/scom-group-queue-pair", ["require", "exports", "@ijstech/component
                             executionProperties: {
                                 tokenIn: fromToken,
                                 tokenOut: toToken,
+                                customTokens: this._data.customTokens,
                                 isCreate: true,
                                 isFlow: true
                             }
