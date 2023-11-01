@@ -421,7 +421,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                 <i-label display="inline" caption="Token Address "></i-label>
                                 <i-label display="inline" caption="*" font={{ color: Theme.colors.error.main }}></i-label>
                             </i-panel>
-                            <i-input id="edtTokenAddress" width="100%" height={32} border={{ radius: 5 }}></i-input>
+                            <i-input id="edtTokenAddress" width="100%" height={32} padding={{ left: '0.5rem', right: '0.5rem' }} border={{ radius: 5 }}></i-input>
                         </i-vstack>
                         <i-vstack gap="0.5rem">
                             <i-label caption="Token Logo"></i-label>
@@ -434,7 +434,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                 onChanged={this.onImageChanged.bind(this)}
                             ></i-upload>
                             <i-label class="text-center" caption="- or -" font={{ size: '14px', color: Theme.text.secondary }} margin={{ top: '-1rem', bottom: '0.35rem' }}></i-label>
-                            <i-input id="edtLogoUrl" width="100%" height={32} border={{ radius: 5 }}></i-input>
+                            <i-input id="edtLogoUrl" width="100%" height={32} padding={{ left: '0.5rem', right: '0.5rem' }} border={{ radius: 5 }}></i-input>
                         </i-vstack>
                         <i-hstack id="pnlErrMsg" gap="0.25rem" verticalAlignment="center" visible={false}>
                             <i-icon height={14} width={14} fill={Theme.colors.error.main} name="exclamation-triangle"></i-icon>
