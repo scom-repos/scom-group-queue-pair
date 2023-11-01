@@ -225,6 +225,7 @@ declare module "@scom/scom-group-queue-pair/flow/initialSetup.tsx" {
         private updateStepStatus;
         private handleClickStart;
         private openTokenModal;
+        private onCloseTokenModal;
         private onImageChanged;
         private uploadImage;
         private getTokenObjectByAddress;

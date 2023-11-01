@@ -739,6 +739,11 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
         openTokenModal() {
             this.mdImportToken.visible = true;
         }
+        onCloseTokenModal() {
+            this.edtTokenAddress.value = "";
+            this.uploader.clear();
+            this.edtLogoUrl.value = "";
+        }
         onImageChanged() {
             this.isImageChanged = true;
         }
@@ -816,8 +821,8 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                     this.$render("i-label", { display: "inline", caption: " to import custom token" })),
                 this.$render("i-hstack", { horizontalAlignment: 'center' },
                     this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart.bind(this) })),
-                this.$render("i-modal", { id: "mdImportToken", width: 640, title: "Import Token", closeIcon: { name: "times" }, closeOnBackdropClick: false },
-                    this.$render("i-vstack", { padding: { top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }, gap: "1rem" },
+                this.$render("i-modal", { id: "mdImportToken", width: 640, padding: { top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }, border: { radius: '0.5rem' }, title: "Import Token", closeIcon: { name: "times" }, closeOnBackdropClick: false, onClose: this.onCloseTokenModal.bind(this) },
+                    this.$render("i-vstack", { padding: { top: "1.5rem" }, gap: "1rem" },
                         this.$render("i-vstack", { gap: "0.5rem" },
                             this.$render("i-panel", null,
                                 this.$render("i-label", { display: "inline", caption: "Token Address " }),
@@ -826,7 +831,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                         this.$render("i-vstack", { gap: "0.5rem" },
                             this.$render("i-label", { caption: "Token Logo" }),
                             this.$render("i-upload", { id: "uploader", accept: "image/*", draggable: true, margin: { top: 0, bottom: 0 }, showFileList: false, onChanged: this.onImageChanged.bind(this) }),
-                            this.$render("i-label", { class: "text-center", caption: "- or -", font: { size: '14px', color: Theme.text.secondary }, margin: { bottom: '0.35rem' } }),
+                            this.$render("i-label", { class: "text-center", caption: "- or -", font: { size: '14px', color: Theme.text.secondary }, margin: { top: '-1rem', bottom: '0.35rem' } }),
                             this.$render("i-input", { id: "edtLogoUrl", width: "100%", height: 32, border: { radius: 5 } })),
                         this.$render("i-hstack", { id: "pnlErrMsg", gap: "0.25rem", verticalAlignment: "center", visible: false },
                             this.$render("i-icon", { height: 14, width: 14, fill: Theme.colors.error.main, name: "exclamation-triangle" }),

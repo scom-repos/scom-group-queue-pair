@@ -290,6 +290,11 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
     private openTokenModal() {
         this.mdImportToken.visible = true;
     }
+    private onCloseTokenModal() {
+        this.edtTokenAddress.value = "";
+        this.uploader.clear();
+        this.edtLogoUrl.value = "";
+    }
     private onImageChanged() {
         this.isImageChanged = true;
     }
@@ -403,11 +408,14 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                 <i-modal
                     id="mdImportToken"
                     width={640}
+                    padding={{ top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }}
+                    border={{ radius: '0.5rem' }}
                     title="Import Token"
                     closeIcon={{ name: "times" }}
                     closeOnBackdropClick={false}
+                    onClose={this.onCloseTokenModal.bind(this)}
                 >
-                    <i-vstack padding={{ top: "1rem", bottom: "1rem", left: "1.5rem", right: "1.5rem" }} gap="1rem">
+                    <i-vstack padding={{ top: "1.5rem" }} gap="1rem">
                         <i-vstack gap="0.5rem">
                             <i-panel>
                                 <i-label display="inline" caption="Token Address "></i-label>
@@ -425,7 +433,7 @@ export default class ScomGroupQueuePairFlowInitialSetup extends Module {
                                 showFileList={false}
                                 onChanged={this.onImageChanged.bind(this)}
                             ></i-upload>
-                            <i-label class="text-center" caption="- or -" font={{ size: '14px', color: Theme.text.secondary }} margin={{ bottom: '0.35rem' }}></i-label>
+                            <i-label class="text-center" caption="- or -" font={{ size: '14px', color: Theme.text.secondary }} margin={{ top: '-1rem', bottom: '0.35rem' }}></i-label>
                             <i-input id="edtLogoUrl" width="100%" height={32} border={{ radius: 5 }}></i-input>
                         </i-vstack>
                         <i-hstack id="pnlErrMsg" gap="0.25rem" verticalAlignment="center" visible={false}>
