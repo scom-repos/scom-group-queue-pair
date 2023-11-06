@@ -351,7 +351,7 @@ export default class ScomGroupQueuePair extends Module {
             this.fromTokenInput.chainId = chainId;
             this.toTokenInput.chainId = chainId;
             const tokens = tokenStore.getTokenList(chainId);
-            const customTokens = this._data.customTokens[this.chainId] ?? [];
+            const customTokens = this._data.customTokens?.[this.chainId] ?? [];
             const tokenList = [...tokens, ...customTokens];
             this.fromTokenInput.tokenDataListProp = tokenList;
             this.toTokenInput.tokenDataListProp = tokenList;
