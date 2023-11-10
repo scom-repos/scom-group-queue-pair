@@ -832,7 +832,7 @@ define("@scom/scom-group-queue-pair/flow/initialSetup.tsx", ["require", "exports
                             this.$render("i-label", { caption: "Token Logo" }),
                             this.$render("i-upload", { id: "uploader", accept: "image/*", draggable: true, margin: { top: 0, bottom: 0 }, showFileList: false, onChanged: this.onImageChanged.bind(this) }),
                             this.$render("i-label", { class: "text-center", caption: "- or -", font: { size: '14px', color: Theme.text.secondary }, margin: { top: '-1rem', bottom: '0.35rem' } }),
-                            this.$render("i-input", { id: "edtLogoUrl", width: "100%", height: 32, padding: { left: '0.5rem', right: '0.5rem' }, border: { radius: 5 } })),
+                            this.$render("i-input", { id: "edtLogoUrl", width: "100%", height: 32, padding: { left: '0.5rem', right: '0.5rem' }, border: { radius: 5 }, placeholder: "Enter Image URL" })),
                         this.$render("i-hstack", { id: "pnlErrMsg", gap: "0.25rem", verticalAlignment: "center", visible: false },
                             this.$render("i-icon", { height: 14, width: 14, fill: Theme.colors.error.main, name: "exclamation-triangle" }),
                             this.$render("i-label", { caption: "Token Not Found", font: { size: "12px", color: Theme.colors.error.main, bold: true } })),
